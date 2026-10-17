@@ -1,12 +1,11 @@
 # Ortak kurallar (tum scriptler icin)
 
-Proje: Turkce KAP (Kamuyu Aydinlatma Platformu) PDF'lerinden bir vision-language modeli (Qwen2.5-VL) LoRA ile
-fine-tune etmek. Girdi: sayfa goruntusu. Hedef: sayfadaki Turkce metni (transkripsiyon) ve finansal tabloyu (JSON) uretmek.
+Proje: Turkce KAP (Kamuyu Aydinlatma Platformu) PDF'lerinden bir vision-language modeli LoRA ile
+fine-tune etmek (model henuz secilmedi; veri hatti modelden bagimsiz olmali). Girdi: sayfa goruntusu. Hedef: sayfadaki Turkce metni (transkripsiyon) ve finansal tabloyu (JSON) uretmek.
 Referans metin PDF'in kendi metin katmanindan gelir (pymupdf).
 
 ## Teknik kurallar
-- Python 3.11+. Kutuphaneler: stdlib, `pymupdf` (import pymupdf), `PIL` (Pillow), `numpy`, `rapidfuzz`. Baska paket kullanma
-  (Colab scriptleri haric, orada torch/transformers/peft kullanilir).
+- Python 3.11+. Kutuphaneler: stdlib, `pymupdf` (import pymupdf), `PIL` (Pillow), `numpy`, `rapidfuzz`. Baska paket kullanma.
 - Proje koku = scriptin bulundugu klasor: `ROOT = Path(__file__).parent`, veri `ROOT / "data"`.
 - Tum dosya okuma/yazma `encoding="utf-8"`. JSONL satirlari `json.dumps(obj, ensure_ascii=False)`.
 - Turkce metni `unicodedata.normalize("NFC", ...)` ile normalize et.
