@@ -4,7 +4,8 @@ Türkçe finansal belgeler (KAP, Kamuyu Aydınlatma Platformu) üzerinde bir vis
 **Türkçe öğrenme kapasitesini LoRA ile ölçmek** için veri hattı. Model sayfa görüntüsünü okur; çıktısı,
 PDF'in kendi metin katmanından gelen referansla karşılaştırılır. Eğitim Colab A100'de yapılacak.
 
-> Durum: veri hattı hazır. Eğitim/değerlendirme notebook'ları, fine-tune edilecek model seçilince eklenecek.
+> Durum: veri hattı, eğitim ve değerlendirme tamam (Qwen2.5-VL-7B ve Qwen3-VL-8B, dört seviyede test edildi).
+> Sonuçlar: [`results/RESULTS.md`](results/RESULTS.md). Devam notları ve sıradaki işler: [`DURUM.md`](DURUM.md).
 
 ## Fikir
 
@@ -39,7 +40,10 @@ table_extract.py   PDF sayfasından finansal tablo çıkarımı
 llm.py             OpenAI uyumlu API ile kod üretimi (EVREN_API_KEY)
 page_stats.py      sayfa kapsama istatistiği
 prompts/           kod üretimi için spec dosyaları
-PLAN.md            ayrıntılı plan ve kararlar
+PLAN.md            ilk plan ve kararlar (bazı bölümler eskidi, güncel durum DURUM.md)
+DURUM.md           yapılanlar, bulgular, yarın nasıl devam edilir, sıradaki işler
+results/           test sonuçları (RESULTS.md + csv)
+colab/             Colab betikleri (vLLM venv kurulumu, eval zinciri, eğitim zinciri)
 ```
 
 ## Kullanım
@@ -68,8 +72,13 @@ report.py           baz vs LoRA karşılaştırma raporu (CER, tr_char_acc, tabl
 build_notebooks.py  notebooks/train_<model>.ipynb ve eval_<model>.ipynb üretir
 ```
 
-Akış: `train_<model>.ipynb` (smoke test → tam eğitim → merge) sonra **yeni bir runtime'da** `eval_<model>.ipynb`
-(unsloth ile vLLM aynı ortama kurulmaz). Colab Secrets: `GH_TOKEN` (repo okuma), `HF_TOKEN`. Drive'a `kap_lora/dataset.zip` yükle.
+Akış: `train_<model>.ipynb` (smoke test → tam eğitim → merge) sonra eval. unsloth ile vLLM aynı ortama kurulmaz:
+notebook'taki eval yolu yeni bir runtime ister; gerçek koşuda bunun yerine **aynı runtime'da ayrı venv** kullanıldı
+(`colab/setup_vllm_env.sh`, sonra `colab/eval_all.sh`; venv'in `bin/` klasörü `PATH`'e eklenmeli). Notebook'lar henüz bu yola göre güncellenmedi.
+Colab Secrets: `GH_TOKEN` (bu repoyu okuyabilen token, aksi hâlde clone 403 verir), `HF_TOKEN`. Drive'a `kap_lora/dataset.zip` yükle.
+
+Gerçek koşuda kullanılan ayarlar (1 saatlik hedef için kısılmış): 1000 örnek, 2 epoch, batch 4 x grad-accum 8, `--max-pixels 700000`,
+`--no-grad-ckpt`. Tam veri / 3 epoch Qwen2.5-VL-7B'de ~5 saat sürer. Komutlar: `colab/train_chain.sh`.
 
 Yerel doğrulama (GPU olmadan): `python train_lora.py --model qwen25vl_7b --data data/dataset --dry-run`.
 
@@ -91,7 +100,25 @@ Mevcut boyutlar (391 şirket: 312 train / 39 val / 40 test; 3.169 sayfa, 825 tab
 
 `data/dataset.zip` ≈ 840 MB (Colab'a Drive üzerinden yüklenecek).
 
+## Sonuçlar (özet)
+
+LoRA her iki modelde de büyük fark yarattı. Temizlenmiş görünümde (sondaki tekrar bloğu kesilir, referansı çok kısa 17 damga-only sayfa hariç; n=282)
+transkripsiyon medyan CER, baz → LoRA:
+
+| Seviye | Qwen2.5-VL-7B | Qwen3-VL-8B |
+|---|---|---|
+| A temiz | 0,102 → 0,015 | 0,098 → 0,015 |
+| B hafif | 0,117 → 0,015 | 0,118 → 0,012 |
+| C orta | 0,116 → 0,019 | 0,119 → 0,014 |
+| D ağır | 0,375 → 0,180 | 0,263 → 0,122 |
+
+Tablo çıkarımında hücre doğruluğu A'da 0,21 → 0,77 (Qwen2.5) ve 0,43 → 0,72 (Qwen3). Ağır bozulma (D) ve tablo satır sayısı hâlâ zayıf.
+Tek koşu, kısılmış eğitim; ayrıntılar ve uyarılar `results/RESULTS.md` içinde.
+
 ## Notlar
+
+- Ham CER/WER yanıltıcı olabilir: referans PDF'in metin katmanı bazı sayfalarda sadece SPK "Doğrulama Kodu" damgasıdır (test setinde 17 sayfa),
+  ve bazı çıktılar 3072 token sınırına kadar tekrar eder. Bu yüzden rapor için `python report.py --eval-dir ... --clean --min-ref-chars 150`.
 
 - `data/` (PDF'ler, görüntüler, veri seti) git'e girmez; yalnızca kod ve spec'ler.
 - API anahtarı sadece `EVREN_API_KEY` ortam değişkeninde, kodda yok.

@@ -1,5 +1,8 @@
 # KAP Finans VL Fine-Tune: Plan
 
+> **Not (2026-10-17):** Bu dosya ilk plandır; bazı bölümler eskidir (yerel 8 GB GPU varsayımı, alan çıkarımı/QA görevleri,
+> "açık kararlar"). Eğitim Colab A100'de yapıldı, görevler transkripsiyon + tablo çıkarımı oldu. Güncel durum: `DURUM.md`, sonuçlar: `results/RESULTS.md`.
+
 Varsayilan hedef (teyit gerekli): KAP PDF sayfalarini (goruntu) okuyup Turkce finansal bilgiyi
 yapisal JSON'a / soru-cevaba ceviren bir vision-language modeli fine-tune etmek.
 
