@@ -12,12 +12,12 @@ DATA = ROOT / "data"
 SEED = 42
 
 
-def _shadow(img, rng):
+def _shadow(img, rng, max_strength=0.25):
     # Kenardan merkeze dogru koyulasan gradyan
     w, h = img.size
     arr = np.asarray(img).astype(np.float32)
     direction = rng.choice(["left", "right", "top", "bottom"])
-    strength = rng.uniform(0.0, 0.25)
+    strength = rng.uniform(0.0, max_strength)
     if direction in ("left", "right"):
         ramp = np.linspace(1.0 - strength, 1.0, w, dtype=np.float32)
         if direction == "right":
@@ -32,87 +32,87 @@ def _shadow(img, rng):
     return Image.fromarray(arr, "RGB"), direction, float(strength)
 
 
-def degrade(img, rng):
-    # Dijital sayfa goruntusunu taranmis gibi bozar
-    params = {}
-    img = img.convert("RGB")
-    applied = False
+# Bozulma seviyeleri: A hic, B hafif, C orta, D agir (zar zor okunur).
+# Her adim: (olasilik, aralik...). jpeg_q: (alt, ust) kalite, dusuk kalite = cok bozuk.
+LEVELS = {
+    "B": dict(gray=0.3, scale=(0.5, 0.85, 1.0), angle=(0.6, 0.8), blur=(0.5, 0.2, 0.6),
+              enhance=(0.5, 0.9, 1.1, 0.95, 1.05), shadow=(0.1, 0.08), noise=(0.5, 1, 5), jpeg=(0.8, 75, 92)),
+    "C": dict(gray=0.5, scale=(0.8, 0.6, 0.85), angle=(0.8, 2.5), blur=(0.7, 0.6, 1.4),
+              enhance=(0.8, 0.75, 1.15, 0.88, 1.08), shadow=(0.3, 0.2), noise=(0.7, 5, 14), jpeg=(0.9, 45, 75)),
+    "D": dict(gray=0.6, scale=(1.0, 0.4, 0.55), angle=(0.9, 4.0), blur=(0.9, 1.0, 1.8),
+              enhance=(0.9, 0.55, 0.85, 0.75, 1.1), shadow=(0.6, 0.4), noise=(0.9, 14, 28), jpeg=(1.0, 12, 35)),
+}
 
-    # 1. gri tonlama
-    if rng.random() < 0.5:
+
+def _jpeg(img, q):
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=q)
+    buf.seek(0)
+    return Image.open(buf).convert("RGB")
+
+
+def degrade(img, rng, level="C"):
+    # Dijital sayfa goruntusunu seviyeye gore taranmis gibi bozar (A = dokunma)
+    params = {"level": level}
+    img = img.convert("RGB")
+    if level == "A":
+        return img, params
+    cfg = LEVELS[level]
+
+    if rng.random() < cfg["gray"]:
         img = img.convert("L").convert("RGB")
         params["grayscale"] = True
-        applied = True
 
-    # 2. dusuk cozunurluk
-    if rng.random() < 0.7:
-        s = rng.uniform(0.5, 1.0)
+    p, lo, hi = cfg["scale"]
+    if rng.random() < p:
+        s = rng.uniform(lo, hi)
         w, h = img.size
         small = img.resize((max(1, int(w * s)), max(1, int(h * s))), Image.BILINEAR)
         img = small.resize((w, h), Image.LANCZOS)
         params["scale"] = round(s, 4)
-        applied = True
 
-    # 3. hafif egiklik
-    if rng.random() < 0.8:
-        angle = rng.uniform(-2.5, 2.5)
+    p, amax = cfg["angle"]
+    if rng.random() < p:
+        angle = rng.uniform(-amax, amax)
         img = img.rotate(angle, resample=Image.BICUBIC, fillcolor=(255, 255, 255))
         params["angle"] = round(angle, 4)
-        applied = True
 
-    # 4. gaussian blur
-    if rng.random() < 0.7:
-        r = rng.uniform(0.3, 1.6)
+    p, lo, hi = cfg["blur"]
+    if rng.random() < p:
+        r = rng.uniform(lo, hi)
         img = img.filter(ImageFilter.GaussianBlur(radius=r))
         params["blur"] = round(r, 4)
-        applied = True
 
-    # 5. kontrast ve parlaklik
-    if rng.random() < 0.8:
-        c = rng.uniform(0.7, 1.2)
-        b = rng.uniform(0.85, 1.1)
-        img = ImageEnhance.Contrast(img).enhance(c)
-        img = ImageEnhance.Brightness(img).enhance(b)
-        params["contrast"] = round(c, 4)
-        params["brightness"] = round(b, 4)
-        applied = True
+    p, clo, chi, blo, bhi = cfg["enhance"]
+    if rng.random() < p:
+        c, b = rng.uniform(clo, chi), rng.uniform(blo, bhi)
+        img = ImageEnhance.Brightness(ImageEnhance.Contrast(img).enhance(c)).enhance(b)
+        params["contrast"], params["brightness"] = round(c, 4), round(b, 4)
 
-    # 6. golge gradyani
-    if rng.random() < 0.3:
-        img, d, s = _shadow(img, rng)
+    p, smax = cfg["shadow"]
+    if rng.random() < p:
+        img, d, s = _shadow(img, rng, smax)
         params["shadow"] = {"dir": d, "strength": round(s, 4)}
-        applied = True
 
-    # 7. gaussian gurultu
-    if rng.random() < 0.7:
-        sigma = rng.uniform(2, 18)
+    p, lo, hi = cfg["noise"]
+    if rng.random() < p:
+        sigma = rng.uniform(lo, hi)
         np_rng = np.random.default_rng(rng.randrange(2 ** 32))
         arr = np.asarray(img).astype(np.float32)
-        noise = np_rng.normal(0.0, sigma, arr.shape)
-        arr = np.clip(arr + noise, 0, 255).astype(np.uint8)
+        arr = np.clip(arr + np_rng.normal(0.0, sigma, arr.shape), 0, 255).astype(np.uint8)
         img = Image.fromarray(arr, "RGB")
         params["noise"] = round(sigma, 4)
-        applied = True
 
-    # 8. jpeg sikistirma
-    if rng.random() < 0.9:
-        q = rng.randint(35, 85)
-        buf = io.BytesIO()
-        img.save(buf, format="JPEG", quality=q)
-        buf.seek(0)
-        img = Image.open(buf).convert("RGB")
-        params["jpeg_q"] = q
-        applied = True
-
-    # En az bir bozulma garantisi
-    if not applied:
-        q = rng.randint(35, 85)
-        buf = io.BytesIO()
-        img.save(buf, format="JPEG", quality=q)
-        buf.seek(0)
-        img = Image.open(buf).convert("RGB")
+    p, qlo, qhi = cfg["jpeg"]
+    if rng.random() < p:
+        q = rng.randint(qlo, qhi)
+        img = _jpeg(img, q)
         params["jpeg_q"] = q
 
+    if len(params) == 1:  # hicbir adim secilmediyse en azindan jpeg uygula
+        q = rng.randint(cfg["jpeg"][1], cfg["jpeg"][2])
+        img = _jpeg(img, q)
+        params["jpeg_q"] = q
     return img, params
 
 
@@ -153,14 +153,11 @@ def demo():
 
     for name, path in items:
         img = Image.open(path).convert("RGB")
-        clean_path = out_dir / f"{name}_clean.png"
-        img.save(clean_path)
-        deg, params = degrade(img, rng)
-        deg_path = out_dir / f"{name}_degraded.png"
-        deg.save(deg_path)
-        print(f"{name}: {json.dumps(params, ensure_ascii=False)}", flush=True)
-        print(f"  clean    -> {clean_path}", flush=True)
-        print(f"  degraded -> {deg_path}", flush=True)
+        for level in "ABCD":
+            deg, params = degrade(img, random.Random(f"{SEED}-{name}"), level)
+            out = out_dir / f"{name}_{level}.png"
+            deg.save(out)
+            print(f"{name} {level}: {json.dumps(params, ensure_ascii=False)}", flush=True)
 
 
 def main():

@@ -33,10 +33,13 @@ yapisal JSON'a / soru-cevaba ceviren bir vision-language modeli fine-tune etmek.
   (b) bildirimden alan cikarimi (sirket, tarih, tutar, olay), (c) sayfa hakkinda soru-cevap.
 
 ### 3b. Tarama bozulmasi (KESIN, kullanici karari)
-- Dijital sayfa goruntulerine gercek taranmis belge gibi bozulma uygulanir: bulaniklik, hafif egiklik
-  (rotate +-2 derece), gurultu, JPEG sikistirma, kontrast/parlaklik degisimi, dusuk dpi.
-- Egitimde karisik: temiz + bozulmus. Testte iki ayri set: `test_clean` ve `test_degraded`,
-  boylece taranmis belgeye genelleme ayri olculur. Referans metin her zaman pymupdf'ten.
+- Dijital sayfa goruntulerine gercek taranmis belge gibi bozulma uygulanir: bulaniklik, hafif egiklik,
+  gurultu, JPEG sikistirma, kontrast/parlaklik degisimi, dusuk dpi, golge.
+- DORT SEVIYE (kullanici karari): **A** hic bozulmayan, **B** hafif, **C** orta, **D** agir (zar zor okunan).
+  Parametre araliklari `degrade.py` icindeki `LEVELS`; D'de olcek 0.4-0.55, blur 1.0-1.8, JPEG kalite 12-35.
+- Egitimde dort seviye esit agirlikla (%25) karisik. Testte dort ayri set: `test_A`, `test_B`, `test_C`, `test_D`
+  (ayni sayfalar, farkli seviye); boylece bozulmaya dayaniklilik seviye seviye olculur. Val temiz (A).
+  Referans metin her zaman pymupdf'ten.
 - Bozulma seed'li ve tekrar uretilebilir olmali (`degrade.py`), parametreler metadata'ya yazilir.
 
 ### 4. Etiket uretimi (ajan dongusu)

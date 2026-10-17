@@ -40,18 +40,19 @@ def split_companies(pages):
     return train, val, test
 
 
-def make_image(src_png, dst_jpg, do_degrade, rng):
+LEVELS = "ABCD"  # A bozulmamis, B hafif, C orta, D agir
+TRAIN_LEVEL_WEIGHTS = [0.25, 0.25, 0.25, 0.25]
+
+
+def make_image(src_png, dst_jpg, level, rng):
     img = Image.open(src_png).convert("RGB")
-    params = None
-    if do_degrade:
-        img, params = degrade(img, rng)
-        img = img.convert("RGB")
+    img, params = degrade(img, rng, level)
     if not dst_jpg.exists():
         img.save(dst_jpg, "JPEG", quality=92)
     return params
 
 
-def build_example(page, task, answer, split, degraded, image_rel, degrade_params):
+def build_example(page, task, answer, split, level, image_rel, degrade_params):
     prompt = PROMPT_TRANSCRIBE if task == "transcribe" else PROMPT_TABLE
     return {
         "id": page["id"],
@@ -59,7 +60,8 @@ def build_example(page, task, answer, split, degraded, image_rel, degrade_params
         "split": split,
         "doc_id": page["doc_id"],
         "type": page["type"],
-        "degraded": degraded,
+        "level": level,
+        "degraded": level != "A",
         "image": image_rel,
         "messages": [
             {"role": "user", "content": [{"type": "image"}, {"type": "text", "text": prompt}]},
@@ -76,28 +78,27 @@ def process_page(page, split, out_records, img_dir):
     src = DATA / page["image"]
 
     if split == "train":
-        do_deg = rng.random() < 0.5
-    elif split in ("val", "test_clean"):
-        do_deg = False
-    else:  # test_degraded
-        do_deg = True
+        level = rng.choices(LEVELS, TRAIN_LEVEL_WEIGHTS)[0]
+    elif split == "val":
+        level = "A"
+    else:  # test_A .. test_D
+        level = split[-1]
 
-    suffix = "_deg" if do_deg else ""
-    img_name = f"{pid}{suffix}.jpg"
+    img_name = f"{pid}.jpg" if level == "A" else f"{pid}_{level}.jpg"
     img_path = img_dir / img_name
-    params = make_image(src, img_path, do_deg, rng)
+    params = make_image(src, img_path, level, rng)
 
     text = page.get("text") or ""
     if text and len(text) <= 5000:
         out_records.append(build_example(
-            page, "transcribe", text, split, do_deg, f"images/{img_name}", params))
+            page, "transcribe", text, split, level, f"images/{img_name}", params))
 
     table = page.get("table")
     if table:
         ans = json.dumps(table, ensure_ascii=False)
         if len(ans) <= 4000:
             out_records.append(build_example(
-                page, "table", ans, split, do_deg, f"images/{img_name}", params))
+                page, "table", ans, split, level, f"images/{img_name}", params))
 
 
 def main():
@@ -121,7 +122,7 @@ def main():
     img_dir = out_dir / "images"
     img_dir.mkdir(parents=True, exist_ok=True)
 
-    splits = {"train": [], "val": [], "test_clean": [], "test_degraded": []}
+    splits = {"train": [], "val": [], **{f"test_{lv}": [] for lv in LEVELS}}
 
     count = 0
     for page in pages:
@@ -133,8 +134,8 @@ def main():
         elif comp in test_c:
             if page["id"] not in test_ids:
                 continue
-            process_page(page, "test_clean", splits["test_clean"], img_dir)
-            process_page(page, "test_degraded", splits["test_degraded"], img_dir)
+            for lv in LEVELS:
+                process_page(page, f"test_{lv}", splits[f"test_{lv}"], img_dir)
         count += 1
         if count % 200 == 0:
             print(f"  {count} sayfa islendi", flush=True)
@@ -155,7 +156,7 @@ def main():
             "n_transcribe": sum(1 for r in records if r["task"] == "transcribe"),
             "n_table": sum(1 for r in records if r["task"] == "table"),
             "n_degraded": n_deg,
-            "degraded_ratio": (n_deg / n) if n else 0.0,
+            "levels": {lv: sum(1 for r in records if r["level"] == lv) for lv in LEVELS},
             "avg_answer_len": (sum(len(r["ref"]) for r in records) / n) if n else 0.0,
         }
     stats["companies"] = {"train": len(train_c), "val": len(val_c), "test": len(test_c)}
@@ -167,9 +168,11 @@ def main():
     if args.zip:
         zip_path = DATA / "dataset.zip"
         with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_STORED) as zf:
-            for p in sorted(out_dir.rglob("*")):
-                if p.is_file():
-                    zf.write(p, p.relative_to(DATA))
+            # sadece guncel split dosyalari, stats ve onlarin kullandigi goruntuler
+            files = [out_dir / f"{name}.jsonl" for name in splits] + [out_dir / "stats.json"]
+            files += [out_dir / img for img in sorted({r["image"] for rs in splits.values() for r in rs})]
+            for p in files:
+                zf.write(p, p.relative_to(DATA))
         print(f"ZIP: {zip_path}", flush=True)
 
 
