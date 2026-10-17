@@ -38,7 +38,10 @@ def load_processor(cfg, min_pixels, max_pixels):
     if cfg.get("dynamic_resolution"):
         # transformers 4.x ve 5.x'te calisan yol: islemci ozniteliklerini dogrudan ayarla
         ip = processor.image_processor
-        ip.min_pixels, ip.max_pixels = min_pixels, max_pixels
+        try:
+            ip.min_pixels, ip.max_pixels = min_pixels, max_pixels
+        except AttributeError:
+            pass  # transformers 5.x: min/max_pixels salt okunur, size'dan turetilir
         ip.size = {"shortest_edge": min_pixels, "longest_edge": max_pixels}
     processor.tokenizer.padding_side = "right"
     return processor
