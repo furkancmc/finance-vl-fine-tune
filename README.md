@@ -56,6 +56,23 @@ python metrics.py --selftest
 
 Konsolda Türkçe çıktı için `python -X utf8` kullanın (Windows).
 
+## Colab (A100 80 GB)
+
+Model anahtarları `model_zoo.py`'de. Hazır olanlar: `qwen25vl_7b`, `qwen3vl_8b` (diğerleri sonra).
+
+```
+train_lora.py       LoRA SFT: --backend unsloth|hf, bf16 (isteğe bağlı --load-in-4bit), 8-bit AdamW (bitsandbytes), --dry-run
+merge_lora.py       adaptörü baz modele birleştirir (vLLM için tam model klasörü)
+eval_vllm.py        vLLM ile hızlı toplu çıkarım (--engine hf yedek), test_A..D
+report.py           baz vs LoRA karşılaştırma raporu (CER, tr_char_acc, tablo metrikleri)
+build_notebooks.py  notebooks/train_<model>.ipynb ve eval_<model>.ipynb üretir
+```
+
+Akış: `train_<model>.ipynb` (smoke test → tam eğitim → merge) sonra **yeni bir runtime'da** `eval_<model>.ipynb`
+(unsloth ile vLLM aynı ortama kurulmaz). Colab Secrets: `GH_TOKEN` (repo okuma), `HF_TOKEN`. Drive'a `kap_lora/dataset.zip` yükle.
+
+Yerel doğrulama (GPU olmadan): `python train_lora.py --model qwen25vl_7b --data data/dataset --dry-run`.
+
 ## Veri seti
 
 - Bölme **şirket bazında** (%80/10/10), aynı şirket iki tarafta yer almaz.
