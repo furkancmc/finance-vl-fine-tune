@@ -20,13 +20,14 @@ BASE_URL = os.environ.get("EVREN_BASE_URL", "https://evren-llmapi.ssyz.org.tr/v1
 MODEL = os.environ.get("EVREN_MODEL", "deepseek/deepseek-v4.1-flash")
 
 
-def chat(messages, model=MODEL, temperature=0.2):
+def chat(messages, model=MODEL, temperature=0.2, max_tokens=16000):
     key = os.environ.get("EVREN_API_KEY")
     if not key:
         sys.exit("EVREN_API_KEY ayarli degil.")
     r = requests.post(f"{BASE_URL.rstrip('/')}/chat/completions",
                       headers={"Authorization": f"Bearer {key}"},
-                      json={"model": model, "messages": messages, "temperature": temperature},
+                      json={"model": model, "messages": messages, "temperature": temperature,
+                            "max_tokens": max_tokens},
                       timeout=600)
     if not r.ok:
         sys.exit(f"API hatasi {r.status_code}: {r.text[:500]}")
@@ -34,8 +35,9 @@ def chat(messages, model=MODEL, temperature=0.2):
 
 
 def extract_code(text):
-    blocks = re.findall(r"```[\w+-]*\n(.*?)```", text, re.S)
-    return "\n".join(blocks) if blocks else text
+    # ilk citten son cite kadar (kodun icindeki ic citler kesmesin)
+    m = re.search(r"```[\w+-]*\n(.*)```", text, re.S)
+    return m.group(1) if m else text
 
 
 def main():
