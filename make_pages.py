@@ -19,6 +19,8 @@ DPI = 130
 MAX_SIDE = 1400
 MIN_CHARS = 50
 MAX_CHARS = 5000
+MAX_TABLE_SCAN = 120   # Finansal Rapor eklerinde taranacak ilk sayfa sayisi
+MAX_TABLE_PAGES = 6    # belge basina secilecek tablo sayfasi
 
 
 def normalize_text(s):
@@ -140,37 +142,31 @@ def process_doc(args):
     # Finansal Rapor: eklerde tablo taramasi
     if meta["type"] == "Finansal Rapor":
         rec_index = {(r["file"], r["page"] - 1): r for r in records}
-        table_count = 0
+        # ilk MAX_TABLE_SCAN sayfadaki tum tablo adaylarini topla, sonra seed'li rastgele sec
+        cands = []
         for apath in attach_files:
-            if table_count >= 4:
-                break
             doc = pymupdf.open(str(apath))
-            n = len(doc)
-            # 40 sayfadan uzun ekleri atla
-            if n > 40:
-                doc.close()
-                continue
-            limit = min(n, 60)
-            for i in range(limit):
-                if table_count >= 4:
-                    break
-                page = doc[i]
+            for i in range(min(len(doc), MAX_TABLE_SCAN)):
                 try:
-                    tbl = extract_page_table(page)
+                    tbl = extract_page_table(doc[i])
                 except Exception:
                     tbl = None
-                if not tbl:
-                    continue
-                key = (apath.name, i)
-                if key in rec_index:
-                    # secili sayfa tablo ciktiysa alani doldur
-                    rec_index[key]["table"] = tbl
-                else:
-                    text = normalize_text(page.get_text("text", sort=True))
-                    rec = make_record(doc, i, apath.name, doc_id, meta, text, tbl)
-                    records.append(rec)
-                    rec_index[key] = rec
-                    table_count += 1
+                if tbl and len(json.dumps(tbl, ensure_ascii=False)) <= 4000:
+                    cands.append((apath, i, tbl))
+            doc.close()
+        trng = random.Random(f"{SEED}-{doc_id}-tbl")
+        for apath, i, tbl in sorted(trng.sample(cands, min(MAX_TABLE_PAGES, len(cands))), key=lambda c: (c[0].name, c[1])):
+            key = (apath.name, i)
+            if key in rec_index:
+                # zaten secili sayfa tablo ciktiysa alani doldur
+                rec_index[key]["table"] = tbl
+                continue
+            doc = pymupdf.open(str(apath))
+            text = normalize_text(doc[i].get_text("text", sort=True))
+            if MIN_CHARS <= len(text) <= MAX_CHARS:
+                rec = make_record(doc, i, apath.name, doc_id, meta, text, tbl)
+                records.append(rec)
+                rec_index[key] = rec
             doc.close()
 
     return doc_id, records
