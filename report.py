@@ -5,13 +5,16 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
-from metrics import score_record
+from statistics import median
+
+from metrics import normalize, score_record
 
 METRIC_KEYS = {
     "transcribe": ["cer", "wer", "tr_char_acc", "number_f1"],
     "table": ["valid", "row_count_match", "label_cer", "value_exact", "cell_exact"],
 }
-ALL_METRICS = METRIC_KEYS["transcribe"] + METRIC_KEYS["table"]
+MEDIAN_KEYS = ["cer", "wer"]
+ALL_METRICS = METRIC_KEYS["transcribe"] + METRIC_KEYS["table"] + [f"median_{k}" for k in MEDIAN_KEYS]
 LEVELS = ["A", "B", "C", "D"]
 
 
@@ -44,6 +47,10 @@ def main():
     ap.add_argument("--eval-dir", action="append", required=True,
                     help="bir model icin eval/<model_key> klasoru (tekrarlanabilir)")
     ap.add_argument("--out", default=None, help="rapor klasoru")
+    ap.add_argument("--clean", action="store_true",
+                    help="transkripsiyonda cikti sonundaki tekrar blogunu kes (metrics.strip_repetition)")
+    ap.add_argument("--min-ref-chars", type=int, default=0,
+                    help="referansi bu kadar karakterden kisa transkripsiyon sayfalarini disla (or. 150: sadece damga iceren sayfalar)")
     args = ap.parse_args()
 
     eval_dirs = [Path(p) for p in args.eval_dir]
@@ -63,7 +70,9 @@ def main():
                 task = rec.get("task", "transcribe")
                 ref = rec.get("ref", "") or ""
                 pred = rec.get("pred", "") or ""
-                scores = score_record(task, ref, pred) or {}
+                if task == "transcribe" and len(normalize(ref)) < args.min_ref_chars:
+                    continue
+                scores = score_record(task, ref, pred, clean=args.clean) or {}
                 acc[(model, tag, task, split)].append(scores)
 
     # ortalama
@@ -75,6 +84,10 @@ def main():
         for k in METRIC_KEYS.get(task, []):
             vals = [r.get(k) for r in lst if r.get(k) is not None]
             avg[k] = sum(vals) / len(vals) if vals else None
+        if task == "transcribe":
+            for k in MEDIAN_KEYS:
+                vals = [r.get(k) for r in lst if r.get(k) is not None]
+                avg[f"median_{k}"] = median(vals) if vals else None
         agg[key] = avg
 
     # CSV
@@ -115,8 +128,11 @@ def main():
         lines.append("")
         return "\n".join(lines)
 
-    md = ["# Rapor", ""]
-    md.append(render("Transkripsiyon CER", matrix("transcribe", "cer")))
+    note = f"clean={args.clean}, min_ref_chars={args.min_ref_chars}"
+    md = ["# Rapor", "", f"Ayarlar: {note}", ""]
+    md.append(render("Transkripsiyon medyan CER", matrix("transcribe", "median_cer")))
+    md.append(render("Transkripsiyon medyan WER", matrix("transcribe", "median_wer")))
+    md.append(render("Transkripsiyon CER (ortalama)", matrix("transcribe", "cer")))
     md.append(render("Transkripsiyon tr_char_acc", matrix("transcribe", "tr_char_acc")))
     md.append(render("Tablo value_exact", matrix("table", "value_exact")))
     md.append(render("Tablo valid", matrix("table", "valid")))
