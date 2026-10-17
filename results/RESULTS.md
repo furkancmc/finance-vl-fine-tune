@@ -21,7 +21,7 @@ Birleştirilmiş (merge) LoRA modeli vs. baz model, aynı sayfalar. Transkripsiy
 
 ## Transkripsiyon: medyan CER (düşük iyi)
 
-Ortalama CER yerine medyan kullanılıyor: sayfaların ~%7-8'inde model tekrar döngüsüne giriyor (aşağıya bakın), bu birkaç uç değer ortalamayı şişiriyor.
+Bu bölümdeki sayılar **ham** çıktıdan (temizleme yok, 299 sayfa). Ortalama CER yerine medyan kullanılıyor çünkü az sayıda uç sayfa (aşağıdaki "CER > 1" bölümü) ortalamayı çok şişiriyor. Uç sayfalar ayıklanmış görünüm için aşağıdaki "Temizlenmiş görünüm" bölümüne bakın.
 
 | Seviye | Qwen2.5 baz | Qwen2.5 LoRA | Qwen3 baz | Qwen3 LoRA |
 |---|---|---|---|---|
@@ -50,7 +50,7 @@ Ortalama CER yerine medyan kullanılıyor: sayfaların ~%7-8'inde model tekrar d
 
 (her hücre: Türkçe karakter doğruluğu / sayı F1)
 
-## Tekrar döngüsü: sayfa sayısı (CER > 1, n=299)
+## CER > 1 olan sayfa sayısı (n=299, ham)
 
 | Seviye | Qwen2.5 baz | Qwen2.5 LoRA | Qwen3 baz | Qwen3 LoRA |
 |---|---|---|---|---|
@@ -59,7 +59,29 @@ Ortalama CER yerine medyan kullanılıyor: sayfaların ~%7-8'inde model tekrar d
 | C | 23 | 26 | 27 | 21 |
 | D | 91 | 71 | 105 | 58 |
 
-CER > 1 olan sayfalarda çıktı referanstan uzun; örneklerde `.1.1.1.1…` gibi sonsuz tekrar görüldü. A-C seviyelerinde sayı baz ve LoRA'da benzer (~21-27), yani fine-tune bunu yaratmadı ama düzeltmedi.
+CER > 1 çıktının referanstan uzun olduğu anlamına gelir. Bu sayfaların büyük kısmı **model hatası değil**; iki ayrı neden var (LoRA modelleri, A-C seviyeleri):
+
+1. **Etiket kusuru (~15 sayfa, her seviyede ve her modelde aynı sayfalar):** referans <150 karakter, PDF metin katmanında sadece SPK "Doğrulama Kodu" damgası var. Model sayfada görünen asıl içeriği (örn. içindekiler tablosu) okuyor, referans ise yalnızca damga. Test setinde böyle 17 transkripsiyon sayfası var. Bu sayfalar ölçüm dışı bırakılmalı (`--min-ref-chars 150`).
+2. **Gerçek kaçak üretim (A-B'de ~7-10 sayfa, ~%3; C'de 12-16):** çıktı 3072 token sınırına kadar uzuyor, sonunda tekrar bloğu var (örn. `0000…`, aynı kelimenin tekrarı). D seviyesinde bu çok daha sık: Qwen2.5 LoRA 72, Qwen3 LoRA 51 sayfa (n=299). Metin başta doğru, sonu çöp; `strip_repetition` ile sondaki tekrar bloğu kesilince CER>1 sayısı belirgin düşüyor (örn. Qwen2.5 LoRA D: 59 → 11).
+
+Not: ilk raporda bu sayfaları yanlışlıkla topluca "tekrar döngüsü" diye yorumladım; incelemede çoğunun etiket kusuru olduğu anlaşıldı.
+
+## Temizlenmiş görünüm (`transcribe_clean.csv`)
+
+`report.py --clean --min-ref-chars 150`: sondaki tekrar bloğu kesilir ve damga-only 17 sayfa dışlanır, n=282. Baz modeller de aynı temizlemeden geçer. Ham tahminler ve ham tablolar yukarıda ayrıca duruyor.
+
+| Seviye | Qwen2.5 baz | Qwen2.5 LoRA | Qwen3 baz | Qwen3 LoRA |
+|---|---|---|---|---|
+| A medyan CER / ort. CER | 0.102 / 0.184 | **0.015 / 0.062** | 0.098 / 0.161 | **0.015 / 0.055** |
+| B medyan CER / ort. CER | 0.117 / 0.195 | **0.015 / 0.066** | 0.118 / 0.165 | **0.012 / 0.050** |
+| C medyan CER / ort. CER | 0.116 / 0.212 | **0.019 / 0.079** | 0.119 / 0.182 | **0.014 / 0.059** |
+| D medyan CER / ort. CER | 0.375 / 0.531 | **0.180 / 0.360** | 0.263 / 0.450 | **0.122 / 0.277** |
+
+LoRA ile temiz ortalama CER A-C'de 0.05-0.08; D'de 0.28-0.36 (ağır bozulmada kalan hata büyük).
+
+Üretimde kaçağı önlemek için `eval_vllm.py --repetition-penalty` bayrağı eklendi (varsayılan 1.0). **GPU'da denenmedi**; sayı ve noktaların meşru tekrarını da cezalandırabilir, kullanmadan önce küçük sette ölçülmeli.
+
+Eğitim verisinde de aynı damga-only sayfaları (referans çok kısa) olabilir; tekrar eğitimde `make_dataset.py`'de minimum referans uzunluğu filtresi konmalı (şu an eklenmedi, veri seti yeniden üretilmedi).
 
 ## Tablo çıkarımı (n=72)
 
