@@ -88,7 +88,7 @@ def load_vllm(args, cfg, model_path):
 def run_vllm(args, llm, rows, data_dir, processor, out_path, done_ids):
     from vllm import SamplingParams
 
-    sp = SamplingParams(temperature=0.0, max_tokens=args.max_new_tokens, repetition_penalty=1.0)
+    sp = SamplingParams(temperature=0.0, max_tokens=args.max_new_tokens, repetition_penalty=args.repetition_penalty)
 
     todo = [r for r in rows if r["id"] not in done_ids]
     print(f"[vllm] {len(todo)} ornek islenecek (toplam {len(rows)})", flush=True)
@@ -218,6 +218,8 @@ def main():
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--engine", choices=["vllm", "hf"], default="vllm")
     ap.add_argument("--max-new-tokens", type=int, default=3072)
+    ap.add_argument("--repetition-penalty", type=float, default=1.0,
+                    help="1.0 = kapali. Kacak uretim icin 1.03-1.1 denenebilir; sayi/nokta tekrarini da cezalandirir, once kucuk sette olc")
     ap.add_argument("--max-pixels", type=int, default=1500000)
     ap.add_argument("--min-pixels", type=int, default=200000)
     ap.add_argument("--gpu-mem", type=float, default=0.90)
