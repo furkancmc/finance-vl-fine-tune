@@ -64,6 +64,16 @@ Konsolda Türkçe çıktı için `python -X utf8` kullanın (Windows).
 - Her kayıt: `id, task, split, level, image, messages (user: görüntü + prompt, assistant: cevap), ref`.
 - Seed'ler sabit (42), her şey tekrar üretilebilir.
 
+Mevcut boyutlar (391 şirket: 312 train / 39 val / 40 test; 3.169 sayfa, 825 tablo sayfası):
+
+| Set | Örnek | Transkripsiyon | Tablo |
+|---|---|---|---|
+| train | 3.253 (A 784, B 814, C 813, D 842) | 2.565 | 688 |
+| val (A) | 370 | 305 | 65 |
+| test_A / B / C / D | her biri 371 | 299 | 72 |
+
+`data/dataset.zip` ≈ 840 MB (Colab'a Drive üzerinden yüklenecek).
+
 ## Notlar
 
 - `data/` (PDF'ler, görüntüler, veri seti) git'e girmez; yalnızca kod ve spec'ler.
