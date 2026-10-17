@@ -32,6 +32,29 @@ def normalize(s):
     return s.strip()
 
 
+def strip_repetition(text, min_repeats=4, min_chars=60, max_period=600):
+    """Cikti sonundaki tekrar blogunu (ayni birimin >=min_repeats kez ust uste gelmesi) tek birime indirir.
+
+    Sadece SONDAKI tekrar kesilir: token siniri yuzunden biten kacak uretimler hep sona kadar surer,
+    normal metinde (ornegin icindekiler noktalari) tekrarin ardindan metin devam eder.
+    """
+    n = len(text)
+    if n < min_chars:
+        return text
+    for period in range(1, min(max_period, n // min_repeats) + 1):
+        k = min_repeats * period
+        tail = text[n - k:]
+        unit = tail[:period]
+        if tail != unit * min_repeats:
+            continue
+        start = n - k
+        while start - period >= 0 and text[start - period:start] == unit:
+            start -= period
+        if n - start >= min_chars:
+            return text[:start + period]
+    return text
+
+
 def cer(ref, hyp):
     ref = normalize(ref)
     hyp = normalize(hyp)
@@ -174,8 +197,10 @@ def table_scores(ref_rows, hyp_rows):
     }
 
 
-def score_record(task, ref, pred):
+def score_record(task, ref, pred, clean=False):
     if task == "transcribe":
+        if clean:
+            pred = strip_repetition(pred or "")
         return {
             "cer": cer(ref, pred),
             "wer": wer(ref, pred),
@@ -197,16 +222,18 @@ def score_record(task, ref, pred):
     return {}
 
 
-def summarize(records):
+def summarize(records, clean=False, min_ref_chars=0):
     groups = {}
     for rec in records:
         task = rec.get("task", "unknown")
+        if task == "transcribe" and len(normalize(rec.get("ref", ""))) < min_ref_chars:
+            continue
         split = rec.get("split", "all")
         groups.setdefault((task, split), []).append(rec)
 
     result = {}
     for (task, split), recs in groups.items():
-        scores = [score_record(task, r.get("ref", ""), r.get("pred", "")) for r in recs]
+        scores = [score_record(task, r.get("ref", ""), r.get("pred", ""), clean=clean) for r in recs]
         keys = set()
         for s in scores:
             keys.update(s.keys())
@@ -237,6 +264,10 @@ def selftest():
     assert turkish_char_acc("çalışma", "calisma") == 0.0
     assert turkish_char_acc("çalışma", "çalışma") == 1.0
     assert number_f1("1.234,56 ve 7", "7 ve 1.234,56") == 1.0
+    assert strip_repetition("Merhaba dunya " + "0" * 500) == "Merhaba dunya 0"
+    assert strip_repetition("ab cd\n" + "satir bir\n" * 30) == "ab cd\nsatir bir\n"
+    assert strip_repetition("BASLIK ........ 3\nDevam eder") == "BASLIK ........ 3\nDevam eder"
+    assert strip_repetition("kisa metin...") == "kisa metin..."
     assert parse_rows("bozuk json") is None
     assert parse_rows("```json\n[{\"kalem\":\"A\",\"dipnot\":null,\"degerler\":[1]}]\n```") is not None
 
