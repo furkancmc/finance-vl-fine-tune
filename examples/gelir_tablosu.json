@@ -1,0 +1,650 @@
+[
+ {
+  "kalem": "Deniz Faktoring A.Ş. 31 Aralık 2025 ve 2024 tarihlerinde sona eren yıla ait kar veya zarar tablosu (Gelir tablosu) (Tutarlar aksi belirtilmedikçe Bin Türk Lirası (“TL”) olarak ifade edilmiştir.) Bağımsız Denetimden Bağımsız Denetimden Geçmiş Geçmiş GELİR VE GİDER KALEMLERİ Dipnot Cari Dönem Önceki Dönem",
+  "dipnot": null,
+  "degerler": [
+   1,
+   1
+  ]
+ },
+ {
+  "kalem": "",
+  "dipnot": null,
+  "degerler": [
+   31,
+   31
+  ]
+ },
+ {
+  "kalem": "I. ESAS FAALİYET GELİRLERİ",
+  "dipnot": null,
+  "degerler": [
+   5124367,
+   7221005
+  ]
+ },
+ {
+  "kalem": "FAKTORİNG GELİRLERİ",
+  "dipnot": "16",
+  "degerler": [
+   5124367,
+   7221005
+  ]
+ },
+ {
+  "kalem": "1.1 Faktoring Alacaklarından Alınan Faizler",
+  "dipnot": null,
+  "degerler": [
+   5090979,
+   7204871
+  ]
+ },
+ {
+  "kalem": "1.1.1 İskontolu",
+  "dipnot": null,
+  "degerler": [
+   3316518,
+   3193680
+  ]
+ },
+ {
+  "kalem": "1.1.2 Diğer",
+  "dipnot": null,
+  "degerler": [
+   1774461,
+   4011191
+  ]
+ },
+ {
+  "kalem": "1.2 Faktoring Alacaklarından Alınan Ücret ve Komisyonlar",
+  "dipnot": null,
+  "degerler": [
+   33388,
+   16134
+  ]
+ },
+ {
+  "kalem": "1.2.1 İskontolu",
+  "dipnot": null,
+  "degerler": [
+   25207,
+   7306
+  ]
+ },
+ {
+  "kalem": "1.2.2 Diğer",
+  "dipnot": null,
+  "degerler": [
+   8181,
+   8828
+  ]
+ },
+ {
+  "kalem": "FİNANSMAN KREDİLERİNDEN GELİRLER",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "1.3 Finansman Kredilerinden Alınan Faizler",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "1.4 Finansman Kredilerinden Alınan Ücret ve Komisyonlar",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "KİRALAMA GELİRLERİ",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "1.5 Finansal Kiralama Gelirleri",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "1.6 Faaliyet Kiralaması Gelirleri",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "1.7 Kiralama İşlemlerinden Alınan Ücret ve Komisyonlar",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "TASARRUF FİNANSMAN GELİRLERİ",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "1.8 Tasarruf Finansman Alacaklarından Alınan Kâr Payları",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "1.9 Tasarruf Finansman Faaliyetlerinden Alınan Ücret ve Komisyonlar",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "II. FİNANSMAN GİDERLERİ (-)",
+  "dipnot": "22",
+  "degerler": [
+   1634676,
+   3299735
+  ]
+ },
+ {
+  "kalem": "2.1 Tasarruf Fon Havuzuna Verilen Kâr Payları",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "2.2 Kullanılan Kredilere Verilen Faizler",
+  "dipnot": null,
+  "degerler": [
+   1045012,
+   1720310
+  ]
+ },
+ {
+  "kalem": "2.3 Faktoring İşlemlerinden Borçlara Verilen Faizler",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "2.4 Kiralama İşlemlerine İlişkin Faiz Giderleri",
+  "dipnot": null,
+  "degerler": [
+   3760,
+   2151
+  ]
+ },
+ {
+  "kalem": "2.5 İhraç Edilen Menkul Kıymetlere Verilen Faizler",
+  "dipnot": null,
+  "degerler": [
+   567331,
+   1521345
+  ]
+ },
+ {
+  "kalem": "2.6 Diğer Faiz Giderleri",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "2.7 Verilen Ücret ve Komisyonlar",
+  "dipnot": null,
+  "degerler": [
+   18573,
+   55929
+  ]
+ },
+ {
+  "kalem": "III. BRÜT K/Z (I+II)",
+  "dipnot": null,
+  "degerler": [
+   3489691,
+   3921270
+  ]
+ },
+ {
+  "kalem": "IV. ESAS FAALİYET GİDERLERİ (-)",
+  "dipnot": "18",
+  "degerler": [
+   370293,
+   238390
+  ]
+ },
+ {
+  "kalem": "4.1 Personel Giderleri",
+  "dipnot": null,
+  "degerler": [
+   226010,
+   125379
+  ]
+ },
+ {
+  "kalem": "4.2 Kıdem Tazminatı Karşılığı Gideri",
+  "dipnot": null,
+  "degerler": [
+   3304,
+   1312
+  ]
+ },
+ {
+  "kalem": "4.3 Araştırma Geliştirme Giderleri",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "4.4 Genel İşletme Giderleri",
+  "dipnot": null,
+  "degerler": [
+   140979,
+   111699
+  ]
+ },
+ {
+  "kalem": "4.5 Diğer",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "V. BRÜT FAALİYET K/Z (III+IV)",
+  "dipnot": null,
+  "degerler": [
+   3119398,
+   3682880
+  ]
+ },
+ {
+  "kalem": "VI. DİĞER FAALİYET GELİRLERİ",
+  "dipnot": "21",
+  "degerler": [
+   2630239,
+   21957014
+  ]
+ },
+ {
+  "kalem": "6.1 Bankalardan Alınan Faizler",
+  "dipnot": null,
+  "degerler": [
+   19693,
+   42314
+  ]
+ },
+ {
+  "kalem": "6.2 Menkul Değerlerden Alınan Faizler",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "6.3 Temettü Gelirleri",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "6.4 Sermaye Piyasası İşlemleri Kârı",
+  "dipnot": null,
+  "degerler": [
+   796486,
+   679407
+  ]
+ },
+ {
+  "kalem": "6.5 Türev Finansal İşlemler Kârı",
+  "dipnot": null,
+  "degerler": [
+   289940,
+   76598
+  ]
+ },
+ {
+  "kalem": "6.6 Kambiyo İşlemleri Kârı",
+  "dipnot": null,
+  "degerler": [
+   1502131,
+   21150830
+  ]
+ },
+ {
+  "kalem": "6.7 Diğer",
+  "dipnot": null,
+  "degerler": [
+   21989,
+   7865
+  ]
+ },
+ {
+  "kalem": "VII. KARŞILIK GİDERLERİ",
+  "dipnot": "17",
+  "degerler": [
+   487876,
+   52809
+  ]
+ },
+ {
+  "kalem": "7.1 Özel Karşılıklar",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "7.2 Beklenen Zarar Karşılıkları",
+  "dipnot": null,
+  "degerler": [
+   256249,
+   408
+  ]
+ },
+ {
+  "kalem": "7.3 Genel Karşılıklar",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "7.4 Diğer",
+  "dipnot": null,
+  "degerler": [
+   231627,
+   52401
+  ]
+ },
+ {
+  "kalem": "VIII. DİĞER FAALİYET GİDERLERİ (-)",
+  "dipnot": "21",
+  "degerler": [
+   2767887,
+   23277444
+  ]
+ },
+ {
+  "kalem": "8.1 Menkul Değerler Değer Düşüş Gideri",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "8.2 Duran Varlıklar Değer Düşüş Giderleri",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "8.3 Sermaye Piyasası İşlemleri Zararı",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "8.4 Türev Finansal İşlemlerden Zarar",
+  "dipnot": null,
+  "degerler": [
+   470953,
+   1447344
+  ]
+ },
+ {
+  "kalem": "8.5 Kambiyo İşlemleri Zararı",
+  "dipnot": null,
+  "degerler": [
+   2211942,
+   21739114
+  ]
+ },
+ {
+  "kalem": "8.6 Diğer",
+  "dipnot": null,
+  "degerler": [
+   84992,
+   90986
+  ]
+ },
+ {
+  "kalem": "IX. NET FAALİYET K/Z (V+…+VIII)",
+  "dipnot": null,
+  "degerler": [
+   2493874,
+   2309641
+  ]
+ },
+ {
+  "kalem": "BİRLEŞME İŞLEMİ SONRASINDA GELİR OLARAK KAYDEDİLEN FAZLALIK X.",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "TUTARI XI. ÖZKAYNAK YÖNTEMİ UYGULANAN ORTAKLIKLARDAN KÂR/ZARAR",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "XII. NET PARASAL POZİSYON KÂRI/ZARARI",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "XIII. SÜRDÜRÜLEN FAALİYETLER VERGİ ÖNCESİ K/Z (IX+X+XI+XII)",
+  "dipnot": null,
+  "degerler": [
+   2493874,
+   2309641
+  ]
+ },
+ {
+  "kalem": "XIV. SÜRDÜRÜLEN FAALİYETLER VERGİ KARŞILIĞI (±)",
+  "dipnot": "20",
+  "degerler": [
+   515599,
+   526619
+  ]
+ },
+ {
+  "kalem": "14.1 Cari Vergi Karşılığı",
+  "dipnot": null,
+  "degerler": [
+   346476,
+   659925
+  ]
+ },
+ {
+  "kalem": "14.2 Ertelenmiş Vergi Gider Etkisi (+)",
+  "dipnot": null,
+  "degerler": [
+   169123,
+   0
+  ]
+ },
+ {
+  "kalem": "14.3 Ertelenmiş Vergi Gelir Etkisi (-)",
+  "dipnot": "12",
+  "degerler": [
+   0,
+   133306
+  ]
+ },
+ {
+  "kalem": "XV. SÜRDÜRÜLEN FAALİYETLER DÖNEM NET K/Z (XIII±XIV)",
+  "dipnot": null,
+  "degerler": [
+   1978275,
+   1783022
+  ]
+ },
+ {
+  "kalem": "XVI. DURDURULAN FAALİYETLERDEN GELİRLER",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "16.1 Satış Amaçlı Elde Tutulan Duran Varlık Gelirleri",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "16.2 İştirak, Bağlı Ortaklık ve Birlikte Kontrol Edilen Ortaklıklar (İş Ort.) Satış Karları",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "16.3 Diğer Durdurulan Faaliyet Gelirleri",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "XVII. DURDURULAN FAALİYETLERDEN GİDERLER (-)",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "17.1 Satış Amaçlı Elde Tutulan Duran Varlık Giderleri",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "17.2 İştirak, Bağlı Ortaklık ve Birlikte Kontrol Edilen Ortaklıklar (İş Ort.) Satış Zararları",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "17.3 Diğer Durdurulan Faaliyet Giderleri",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "XVIII. DURDURULAN FAALİYETLER VERGİ ÖNCESİ K/Z (XVI-XVII)",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "XIX. DURDURULAN FAALİYETLER VERGİ KARŞILIĞI (±)",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "19.1 Cari Vergi Karşılığı",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "19.2 Ertelenmiş Vergi Gider Etkisi (+)",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "19.3 Ertelenmiş Vergi Gelir Etkisi (-)",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "XX. DURDURULAN FAALİYETLER DÖNEM NET K/Z (XVIII±XIX)",
+  "dipnot": null,
+  "degerler": [
+   0,
+   0
+  ]
+ },
+ {
+  "kalem": "XXI. DÖNEM NET KARI/ZARARI (XV+XX)",
+  "dipnot": "22",
+  "degerler": [
+   1978275,
+   1783022
+  ]
+ }
+]
