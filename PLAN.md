@@ -22,8 +22,11 @@ yapisal JSON'a / soru-cevaba ceviren bir vision-language modeli fine-tune etmek.
 ### 2. Sayfa -> goruntu + metin
 - pymupdf ile sayfa PNG (150-200 dpi) ve kelime/kutu cikarimi.
 - Cikis: `data/pages/<id>/p<N>.png`, `p<N>.json` (metin + koordinat).
-- Mojibake sorunu: `examples/` ciktilarinda Turkce karakterler bozuk (Ä°, Ã¶). PDF metni
-  yanlis kodlaniyor olabilir; once bunu cozen bir duzeltme/dogrulama adimi ekle.
+- Mojibake: SORUN DEGIL. `inventory.py` ile dogrulandi, PDF metni dogru Unicode (U+0130, U+015E...);
+  bozuk gorunum sadece Windows konsolu. Dosyalari her zaman utf-8 ile oku/yaz, konsola Turkce basarken
+  `python -X utf8` kullan.
+- Denetim (781 PDF, 14.838 sayfa): `�` yok; sayfalarin %4,2'si metin katmansiz (cogu ekler, %4,8).
+  Bu sayfalar referans uretemez, transkripsiyon veri setinden elenecek.
 
 ### 3. Gorev tanimi (karar gerekli, asagida)
 - Onerilen baslangic: (a) gelir tablosu/bilanco tablo cikarimi -> JSON,
