@@ -32,6 +32,13 @@ yapisal JSON'a / soru-cevaba ceviren bir vision-language modeli fine-tune etmek.
 - Onerilen baslangic: (a) gelir tablosu/bilanco tablo cikarimi -> JSON,
   (b) bildirimden alan cikarimi (sirket, tarih, tutar, olay), (c) sayfa hakkinda soru-cevap.
 
+### 3b. Tarama bozulmasi (KESIN, kullanici karari)
+- Dijital sayfa goruntulerine gercek taranmis belge gibi bozulma uygulanir: bulaniklik, hafif egiklik
+  (rotate +-2 derece), gurultu, JPEG sikistirma, kontrast/parlaklik degisimi, dusuk dpi.
+- Egitimde karisik: temiz + bozulmus. Testte iki ayri set: `test_clean` ve `test_degraded`,
+  boylece taranmis belgeye genelleme ayri olculur. Referans metin her zaman pymupdf'ten.
+- Bozulma seed'li ve tekrar uretilebilir olmali (`degrade.py`), parametreler metadata'ya yazilir.
+
 ### 4. Etiket uretimi (ajan dongusu)
 Her ornek icin dongu:
 1. Planla: Claude Code gorevi ve girdiyi secer (sayfa metni + kutular).

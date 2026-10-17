@@ -23,8 +23,8 @@ BASE = "https://www.kap.org.tr/tr/api"
 ROOT = Path(__file__).parent / "data"
 DOCS = ROOT / "docs"
 SEL = ROOT / "selection.json"
-DELAY = 0.15
-WORKERS = 8
+DELAY = 0.4
+WORKERS = 3
 MAX_ATTACH = 5
 SEED = 42
 
