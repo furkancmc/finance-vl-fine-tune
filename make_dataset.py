@@ -7,10 +7,12 @@ from pathlib import Path
 from PIL import Image
 
 from degrade import degrade
+from metrics import normalize
 
 ROOT = Path(__file__).parent
 DATA = ROOT / "data"
 SEED = 42
+MIN_REF_CHARS = 150  # bundan kisa metin = sadece SPK dogrulama damgasi, etiket degil
 
 PROMPT_TRANSCRIBE = "Bu sayfadaki tüm metni okuma sırasına uygun şekilde, olduğu gibi yaz."
 PROMPT_TABLE = "Bu sayfadaki finansal tabloyu JSON listesi olarak çıkar. Her satır için `kalem`, `dipnot` ve `degerler` alanlarını yaz; sayıları rakam olarak yaz (binlik ayracı noktasını kaldır, parantezli değerler negatiftir)."
@@ -89,7 +91,7 @@ def process_page(page, split, out_records, img_dir):
     params = make_image(src, img_path, level, rng)
 
     text = page.get("text") or ""
-    if text and len(text) <= 5000:
+    if text and len(text) <= 5000 and len(normalize(text)) >= MIN_REF_CHARS:
         out_records.append(build_example(
             page, "transcribe", text, split, level, f"images/{img_name}", params))
 
