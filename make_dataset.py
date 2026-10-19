@@ -30,7 +30,33 @@ def load_pages():
 
 
 TRAIN_FRAC, VAL_FRAC = 0.7, 0.1  # kalan 0.2 test
-MAX_PAGES_PER_DOC_TRAIN = 10  # tek bildirimin egitimi domine etmesini onler
+TRAIN_N_TABLE = 500  # egitimde tablo ornegi (her tablo sayfasi bir transkripsiyon da uretir)
+TRAIN_N_TEXT = 2000  # egitimde toplam transkripsiyon ornegi
+
+
+def select_train_pages(pages, train_c):
+    # tablo ve transkripsiyon sayilarini tam tutturur; bildirimler arasi dengeli (round-robin)
+    rng = random.Random(SEED)
+
+    def balanced(cands):
+        cands = list(cands)
+        rng.shuffle(cands)
+        seen, ranked = {}, []
+        for pg in cands:
+            r = seen.get(pg["doc_id"], 0)
+            seen[pg["doc_id"]] = r + 1
+            ranked.append((r, rng.random(), pg))
+        ranked.sort(key=lambda x: x[:2])
+        return [pg for _, _, pg in ranked]
+
+    tr = [p for p in pages if p["company"] in train_c]
+    ok_text = lambda p: 0 < len(normalize(p.get("text") or "")) and len(p["text"]) <= 5000         and len(normalize(p["text"])) >= MIN_REF_CHARS
+    tab = [p for p in tr if p.get("table") and ok_text(p) and len(json.dumps(p["table"], ensure_ascii=False)) <= 4000]
+    chosen = balanced(tab)[:TRAIN_N_TABLE]
+    ids = {p["id"] for p in chosen}
+    rest = [p for p in tr if p["id"] not in ids and not p.get("table") and ok_text(p)]
+    chosen += balanced(rest)[:TRAIN_N_TEXT - len(chosen)]
+    return {p["id"] for p in chosen}
 
 
 def split_companies(pages):
@@ -146,15 +172,13 @@ def main():
 
     splits = {"train": [], "val": [], **{f"test_{lv}": [] for lv in LEVELS}}
 
-    jobs, per_doc = [], {}
+    train_ids = select_train_pages(pages, train_c)
+    jobs = []
     for page in pages:
         comp = page["company"]
         if comp in train_c:
-            n = per_doc.get(page["doc_id"], 0)
-            if n >= MAX_PAGES_PER_DOC_TRAIN:
-                continue
-            per_doc[page["doc_id"]] = n + 1
-            jobs.append((page, "train", img_dir))
+            if page["id"] in train_ids:
+                jobs.append((page, "train", img_dir))
         elif comp in val_c:
             jobs.append((page, "val", img_dir))
         elif comp in test_c:
