@@ -29,9 +29,11 @@ def load_pages():
     return pages
 
 
-TRAIN_FRAC, VAL_FRAC = 0.7, 0.1  # kalan 0.2 test
+TRAIN_FRAC, VAL_FRAC = 0.67, 0.13  # kalan 0.2 test
 TRAIN_N_TABLE = 500  # egitimde tablo ornegi (her tablo sayfasi bir transkripsiyon da uretir)
 TRAIN_N_TEXT = 2000  # egitimde toplam transkripsiyon ornegi
+VAL_N = 500  # val toplam ornek
+TEST_N = 700  # her test seviyesinde toplam ornek
 
 
 def select_train_pages(pages, train_c):
@@ -56,6 +58,31 @@ def select_train_pages(pages, train_c):
     ids = {p["id"] for p in chosen}
     rest = [p for p in tr if p["id"] not in ids and not p.get("table") and ok_text(p)]
     chosen += balanced(rest)[:TRAIN_N_TEXT - len(chosen)]
+    return {p["id"] for p in chosen}
+
+
+def n_examples(p):
+    n = 0
+    if p.get("text") and MIN_REF_CHARS <= len(normalize(p["text"])) <= 5000:
+        n += 1
+    if p.get("table") and len(json.dumps(p["table"], ensure_ascii=False)) <= 4000:
+        n += 1
+    return n
+
+
+def select_eval_pages(pages, companies, target, seed_tag):
+    # tam `target` ornek: sayfalar seed'li karistirilir, 2 ornekli sayfa kalan 1 ise atlanir
+    cands = [p for p in pages if p["company"] in companies and n_examples(p) > 0]
+    random.Random(f"{SEED}-{seed_tag}").shuffle(cands)
+    chosen, total = [], 0
+    for p in cands:
+        k = n_examples(p)
+        if total + k <= target:
+            chosen.append(p)
+            total += k
+        if total == target:
+            break
+    assert total == target, (seed_tag, total)
     return {p["id"] for p in chosen}
 
 
@@ -161,10 +188,10 @@ def main():
     train_c, val_c, test_c = split_companies(pages)
     print(f"Sirket: train={len(train_c)} val={len(val_c)} test={len(test_c)}", flush=True)
 
-    test_pages = [p for p in pages if p["company"] in test_c]
+    test_ids = select_eval_pages(pages, test_c, TEST_N, "test")
+    val_ids = select_eval_pages(pages, val_c, VAL_N, "val")
     if args.limit:
-        test_pages = test_pages[:args.limit]
-    test_ids = {p["id"] for p in test_pages}
+        test_ids = set(sorted(test_ids)[:args.limit])
 
     out_dir = DATA / "dataset"
     img_dir = out_dir / "images"
@@ -180,7 +207,8 @@ def main():
             if page["id"] in train_ids:
                 jobs.append((page, "train", img_dir))
         elif comp in val_c:
-            jobs.append((page, "val", img_dir))
+            if page["id"] in val_ids:
+                jobs.append((page, "val", img_dir))
         elif comp in test_c:
             if page["id"] not in test_ids:
                 continue
