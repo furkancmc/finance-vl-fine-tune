@@ -2,6 +2,7 @@ import argparse
 import json
 import random
 import zipfile
+from multiprocessing import Pool
 from pathlib import Path
 
 from PIL import Image
@@ -28,14 +29,18 @@ def load_pages():
     return pages
 
 
+TRAIN_FRAC, VAL_FRAC = 0.7, 0.1  # kalan 0.2 test
+MAX_PAGES_PER_DOC_TRAIN = 10  # tek bildirimin egitimi domine etmesini onler
+
+
 def split_companies(pages):
     # sirket bazinda bolme, sizinti yok
     companies = sorted({p["company"] for p in pages})
     rng = random.Random(SEED)
     rng.shuffle(companies)
     n = len(companies)
-    n_train = int(n * 0.8)
-    n_val = int(n * 0.1)
+    n_train = int(n * TRAIN_FRAC)
+    n_val = int(n * VAL_FRAC)
     train = set(companies[:n_train])
     val = set(companies[n_train:n_train + n_val])
     test = set(companies[n_train + n_val:])
@@ -74,7 +79,7 @@ def build_example(page, task, answer, split, level, image_rel, degrade_params):
     }
 
 
-def process_page(page, split, out_records, img_dir):
+def process_page(page, split, img_dir):
     pid = page["id"]
     rng = random.Random(f"{SEED}-{pid}")
     src = DATA / page["image"]
@@ -90,17 +95,32 @@ def process_page(page, split, out_records, img_dir):
     img_path = img_dir / img_name
     params = make_image(src, img_path, level, rng)
 
+    out, dropped = [], []
     text = page.get("text") or ""
-    if text and len(text) <= 5000 and len(normalize(text)) >= MIN_REF_CHARS:
-        out_records.append(build_example(
+    if not text:
+        dropped.append("transcribe:empty")
+    elif len(text) > 5000:
+        dropped.append("transcribe:too_long")
+    elif len(normalize(text)) < MIN_REF_CHARS:
+        dropped.append("transcribe:stamp_only")
+    else:
+        out.append(build_example(
             page, "transcribe", text, split, level, f"images/{img_name}", params))
 
     table = page.get("table")
     if table:
         ans = json.dumps(table, ensure_ascii=False)
         if len(ans) <= 4000:
-            out_records.append(build_example(
+            out.append(build_example(
                 page, "table", ans, split, level, f"images/{img_name}", params))
+        else:
+            dropped.append("table:too_long")
+    return split, out, dropped
+
+
+def _job(args):
+    page, split, img_dir = args
+    return process_page(page, split, img_dir)
 
 
 def main():
@@ -126,21 +146,33 @@ def main():
 
     splits = {"train": [], "val": [], **{f"test_{lv}": [] for lv in LEVELS}}
 
-    count = 0
+    jobs, per_doc = [], {}
     for page in pages:
         comp = page["company"]
         if comp in train_c:
-            process_page(page, "train", splits["train"], img_dir)
+            n = per_doc.get(page["doc_id"], 0)
+            if n >= MAX_PAGES_PER_DOC_TRAIN:
+                continue
+            per_doc[page["doc_id"]] = n + 1
+            jobs.append((page, "train", img_dir))
         elif comp in val_c:
-            process_page(page, "val", splits["val"], img_dir)
+            jobs.append((page, "val", img_dir))
         elif comp in test_c:
             if page["id"] not in test_ids:
                 continue
             for lv in LEVELS:
-                process_page(page, f"test_{lv}", splits[f"test_{lv}"], img_dir)
-        count += 1
-        if count % 200 == 0:
-            print(f"  {count} sayfa islendi", flush=True)
+                jobs.append((page, f"test_{lv}", img_dir))
+
+    from collections import Counter
+    drops = Counter()
+    with Pool() as pool:
+        for i, (split, recs, dropped) in enumerate(pool.imap(_job, jobs, chunksize=8), 1):
+            splits[split].extend(recs)
+            for d in dropped:
+                drops[f"{split.split('_')[0]}/{d}"] += 1
+            if i % 500 == 0:
+                print(f"  {i}/{len(jobs)} is islendi", flush=True)
+    print("Elenen ornekler:", dict(drops), flush=True)
 
     for name, records in splits.items():
         path = out_dir / f"{name}.jsonl"
