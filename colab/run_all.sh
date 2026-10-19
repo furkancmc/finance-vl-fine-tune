@@ -14,7 +14,8 @@ log() { echo "[$(date '+%F %T')] $*" | tee -a $LOG; }
 status() { echo "[$(date '+%F %T')] $*" >> $STATUS; log "$*"; }
 cd /content/repo && git pull -q
 
-export PATH=/content/vllm_env/bin:$PATH
+# venv PATH'in SONUNA: vLLM'in ninja'si bulunsun ama `python` sistem python'u kalsin (unsloth/peft orada kurulu)
+export PATH=$PATH:/content/vllm_env/bin
 export VLLM_USE_FLASHINFER_SAMPLER=0
 VPY=/content/vllm_env/bin/python
 MODELS=${MODELS:-"qwen3vl_8b qwen25vl_7b internvl35_8b gemma3_12b llama32_11b"}
