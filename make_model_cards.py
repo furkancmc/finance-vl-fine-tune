@@ -175,6 +175,8 @@ def main():
     ap.add_argument("--summary", required=True)
     ap.add_argument("--out", default="hf_cards")
     ap.add_argument("--upload", action="store_true")
+    ap.add_argument("--only", default="", help="virgullu model anahtarlari (bos = hepsi)")
+    ap.add_argument("--public", action="store_true", help="yukledikten sonra depoyu public yap")
     args = ap.parse_args()
     rows = load(args.summary)
     out = Path(args.out)
@@ -183,13 +185,19 @@ def main():
     if args.upload:
         from huggingface_hub import HfApi
         api = HfApi(token=os.environ["HF_WRITE_TOKEN"])
+    only = [k for k in args.only.split(",") if k]
     for key, m in MODELS.items():
+        if only and key not in only:
+            continue
         text = card(key, rows)
         (out / f"{key}.md").write_text(text, encoding="utf-8")
         if api:
             api.upload_file(path_or_fileobj=text.encode("utf-8"), path_in_repo="README.md", repo_id=m["repo"], repo_type="model",
                             commit_message="Model card (sonuclar, egitim, kullanim)")
             print("yuklendi:", m["repo"], flush=True)
+            if args.public:
+                api.update_repo_settings(repo_id=m["repo"], private=False, repo_type="model")
+                print("public:", m["repo"], flush=True)
     print("kartlar:", out)
 
 
