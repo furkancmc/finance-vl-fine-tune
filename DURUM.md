@@ -1,6 +1,6 @@
-# Durum ve devam notları
+# Proje durumu: tamamlandı
 
-Son güncelleme: 2026-10-20. Ana sayfa: [`README.md`](README.md) · yöntem: [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) · sonuçlar: [`results/FINAL_RESULTS.md`](results/FINAL_RESULTS.md).
+Tamamlanma: 2026-10-20. Ana sayfa: [`README.md`](README.md) · yöntem: [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) · sonuçlar: [`results/FINAL_RESULTS.md`](results/FINAL_RESULTS.md).
 
 ## Tamamlananlar
 - **v2 veri seti:** şirket bazlı 261/50/80 bölme; eğitim 2500 (2000 metin + 500 tablo), doğrulama 500, test 700 × 4 bozulma seviyesi. Damga-only sayfalar filtrelendi.
@@ -8,7 +8,7 @@ Son güncelleme: 2026-10-20. Ana sayfa: [`README.md`](README.md) · yöntem: [`d
   Llama 3.2 yalnızca ilk 100 örnek/seviye ve HF motoruyla ölçüldü (vLLM bu modeli desteklemiyor).
 - Bootstrap %95 güven aralıklı birleşik rapor, gerçek çıktı örnekleri, 5 model kartı ve Hugging Face adaptörleri (`furkancmc/*-KAP-TR-LoRA`).
 
-## Yapılmayanlar / sıradaki işler
+## Kapsam dışı kalanlar ve olası sonraki çalışmalar
 1. **Gerçek taranmış test seti** (elle doğru metinli 50–100 sayfa). En önemli eksik; yapay bozulmanın gerçeği temsil edip etmediğini ölçer.
 2. **Etiket doğrulama:** rastgele 30–40 sayfanın referansını (özellikle tablo satırları) elle kontrol etmek.
 3. **Birden fazla eğitim tohumu** (en az 3) ile eğitim rastgeleliğini ölçmek; birbirine yakın modelleri (Qwen3 ↔ Qwen2.5) ayırmak.

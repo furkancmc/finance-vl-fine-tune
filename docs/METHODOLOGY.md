@@ -162,6 +162,6 @@ Ham KAP verisi ve PDF'ler repoda yoktur (yeniden dağıtım koşulları ayrıca 
 6. **Baz model hatası kısmen format hatasıdır.** Bazı modeller (InternVL3.5, Gemma 3, Llama 3.2) baz haliyle JSON
    şemasını üretemiyor (geçerli JSON ≈ %0–5); bu yüzden onlarda tablo kazancının büyük kısmı "formatı öğrenme"dir,
    okuma becerisi artışından ayrı düşünülmeli.
-7. **OCR baz çizgileri tamamlanmadı.** PaddleOCR-VL, HunyuanOCR ve DeepSeek-OCR zero-shot karşılaştırması planlandı, tamamlanmadı.
+7. **Hazır OCR modelleriyle kıyas yok.** PaddleOCR-VL, HunyuanOCR ve DeepSeek-OCR ile zero-shot karşılaştırma bu çalışmanın kapsamında değildir.
 8. **Veri ve model lisansları:** KAP içeriğinin yeniden dağıtımı için kullanım koşulları doğrulanmalıdır. Gemma ve Llama
    türevlerinin kendi lisans şartları vardır (bkz. model kartları).

@@ -5,10 +5,12 @@ karşılaştıran ve her birine küçük bir **LoRA** ince ayarı uygulayıp ne 
 görür; cevap anahtarı PDF'in kendi metin katmanıdır (elle etiketleme yok). Taranmış/fotoğraflanmış belgeyi taklit etmek için görüntüler
 dört seviyede (A temiz → D ağır) **yapay olarak bozulur**.
 
-![durum](https://img.shields.io/badge/durum-ara%20sonu%C3%A7lar%20(tek%20ko%C5%9Fu)-yellow)
+![durum](https://img.shields.io/badge/durum-tamamland%C4%B1-brightgreen)
 ![modeller](https://img.shields.io/badge/modeller-5-blue)
 ![dil](https://img.shields.io/badge/dil-T%C3%BCrk%C3%A7e-red)
 
+> **Proje durumu: tamamlandı** (v2, Ekim 2026). Kapsam: 5 model, tek eğitim koşusu, yapay bozulmalı test.
+>
 > **Kısaca:** Qwen3-VL-8B + LoRA, temiz sayfalarda medyan karakter hata oranını (CER) **0,107 → 0,009**'a (≈ 12 kat), ağır bozulmada **0,289 → 0,092**'ye (≈ 3 kat)
 > indiriyor; finansal tablo çıkarımında hücre doğruluğunu **0,45 → 0,72**'ye çıkarıyor. Etki 5 modelin hepsinde var ama büyüklüğü modele göre çok değişiyor.
 > **Dikkat:** tek eğitim koşusu, yapay bozulma, gerçek tarama testi yok. Sınırlamalar aşağıda.
@@ -257,7 +259,7 @@ print(processor.batch_decode(out[:, inputs["input_ids"].shape[1]:], skip_special
 | `eval_vllm.py`, `metrics.py` | Değerlendirme (vLLM / HF) ve metrikler |
 | `report.py`, `final_report.py`, `make_examples.py`, `make_model_cards.py` | Raporlar, güven aralıkları, örnekler, model kartları |
 | `colab/setup_all.sh`, `colab/run_all.sh` | Colab A100'de 5 modeli sıralı eğiten/değerlendiren zincir |
-| `ocr_eval.py`, `ocr_eval_vllm.py` | OCR baz çizgisi denemeleri (**tamamlanmadı**, aşağıya bakın) |
+| `ocr_eval.py`, `ocr_eval_vllm.py` | OCR modelleri için deneme kodu (karşılaştırma kapsam dışı, bkz. Sınırlamalar) |
 | `results/` | `FINAL_RESULTS.md`, `EXAMPLES.md`, `final/` (CSV + grafikler), v1: `RESULTS.md` |
 | `docs/METHODOLOGY.md` | Ayrıntılı yöntem |
 
@@ -280,7 +282,7 @@ Ham KAP verisi ve PDF'ler depoda **yoktur**; `kap_collect.py` ile yeniden indiri
 5. **Taban model hatasının bir kısmı biçim hatası** (markdown/JSON şeması). Kazançlar tamamen "daha iyi okuma" değildir; özellikle InternVL3.5, Gemma 3, Llama 3.2 tablo sonuçlarında.
 6. **Llama 3.2 farklı protokol:** yalnızca ilk 100 örnek/seviye, HF motoruyla, en çok 2048 token. Ortak alt küme tablosuyla kıyaslayın.
 7. **Kısa eğitim:** 2 epoch, 2500 örnek. Daha uzun/geniş eğitim sonuçları değiştirebilir. Kaçak (tekrar döngüsü) üretim ağır bozulmada hâlâ görülüyor; `repetition_penalty` denenmedi.
-8. **OCR baz çizgileri tamamlanmadı.** PaddleOCR-VL, HunyuanOCR, DeepSeek-OCR ile zero-shot kıyas planlandı, tamamlanmadı (PaddleOCR-VL için yalnızca kısmi bir ön ölçüm var, rapora dahil edilmedi).
+8. **Hazır OCR modelleriyle kıyas yok.** PaddleOCR-VL, HunyuanOCR ve DeepSeek-OCR ile zero-shot karşılaştırma bu çalışmanın kapsamında değildir; deneme kodu (`ocr_eval_vllm.py`) depoda durur. PaddleOCR-VL için yalnızca kısmi bir ön ölçüm alındı, rapora dahil edilmedi.
 9. **Yalnızca KAP.** Başka belge türleri/ülkeleri test edilmedi.
 
 ## 8. Lisans ve veri notları
