@@ -94,7 +94,7 @@ def build_tables(data, title):
     return lines
 
 
-def charts(data, out_dir):
+def charts(data, out_dir, suffix="", exclude=(), note=""):
     try:
         import matplotlib
         matplotlib.use("Agg")
@@ -102,10 +102,10 @@ def charts(data, out_dir):
     except Exception as e:
         print("grafik atlandi:", e)
         return
-    models = [m for m in FINETUNED if any((m, "lora", f"test_{lv}") in data for lv in LEVELS)]
+    models = [m for m in FINETUNED if m not in exclude and any((m, "lora", f"test_{lv}") in data for lv in LEVELS)]
     for task, metric, stat, ylabel, fname in [
-        ("transcribe", "cer", median, "Medyan CER (dusuk iyi)", "cer_by_level.png"),
-        ("table", "cell_exact", mean, "Tablo hucre dogrulugu (yuksek iyi)", "table_cell_exact.png"),
+        ("transcribe", "cer", median, "Medyan CER (dusuk iyi)", f"cer_by_level{suffix}.png"),
+        ("table", "cell_exact", mean, "Tablo hucre dogrulugu (yuksek iyi)", f"table_cell_exact{suffix}.png"),
     ]:
         fig, ax = plt.subplots(figsize=(9, 4.5))
         w, x0 = 0.8 / (2 * len(models)), 0
@@ -118,7 +118,7 @@ def charts(data, out_dir):
                 xs = [k + (2 * i + j - len(models) + 0.5) * w for k in range(4)]
                 ax.bar(xs, ys, w, label=f"{m} {tag}", alpha=0.45 if tag == "base" else 1.0, color=f"C{i}")
         ax.set_xticks(range(4)); ax.set_xticklabels([f"Seviye {lv}" for lv in LEVELS])
-        ax.set_ylabel(ylabel); ax.legend(fontsize=7, ncol=2); ax.grid(axis="y", alpha=0.3)
+        ax.set_ylabel(ylabel); ax.set_title(note, fontsize=9); ax.legend(fontsize=7, ncol=2); ax.grid(axis="y", alpha=0.3)
         fig.tight_layout(); fig.savefig(out_dir / fname, dpi=140); plt.close(fig)
 
 
@@ -156,7 +156,9 @@ def main():
                     if metric in ("cer", "number_f1", "cell_exact", "valid", "row_count_match"):
                         est, lo, hi = boot_ci(vals, median if metric == "cer" else mean)
                         w.writerow([name, m, t, split[-1], task, metric, len(vals), f"{est:.4f}", f"{lo:.4f}", f"{hi:.4f}"])
-    charts(full, out)
+    charts(full, out, "", exclude=("llama32_11b",), note="Tam test seti (567 metin + 133 tablo sayfasi / seviye); Llama haric")
+    if ids:
+        charts(sub, out, "_common", note="Ortak alt kume (Llama ile ayni 67 metin + 33 tablo sayfasi / seviye)")
     print("yazildi:", out)
 
 
