@@ -39,16 +39,17 @@ Test: 80 şirket, **567 transkripsiyon + 133 tablo sayfası, her seviyede aynı 
 | **Qwen2.5-VL-7B** | 0,105 → **0,009** | 0,401 → **0,165** | 0,19 → **0,69** | 0,06 → **0,29** |
 | **InternVL3.5-8B** | 0,245 → **0,015** | 0,845 → **0,364** | 0,00 → **0,68** | 0,00 → **0,17** |
 | **Gemma 3 12B** | 0,421 → **0,147** | 0,612 → **0,394** | 0,01 → **0,48** | 0,00 → **0,13** |
-| **Llama 3.2 11B Vision**\* | {{LLAMA_CER_A}} | {{LLAMA_CER_D}} | {{LLAMA_CELL_A}} | {{LLAMA_CELL_D}} |
+| **Llama 3.2 11B Vision**\* | 0,449 → **0,032** | 0,885 → **0,352** | 0,00 → **0,72** | 0,00 → **0,08** |
 
 \* Llama 3.2 yalnızca her seviyenin **ilk 100 örneğinde** (≈ 67 transkripsiyon + 33 tablo) ve Hugging Face `generate` ile ölçüldü (vLLM bu modeli desteklemiyor).
 Diğer modellerle adil kıyas için [`results/FINAL_RESULTS.md`](results/FINAL_RESULTS.md) içindeki **ortak alt küme** tablosuna bakın.
 
 **Sonuçtan çıkanlar**
-1. **LoRA her modelde işe yarıyor, ama büyüklüğü farklı.** Qwen ve InternVL'de temiz/hafif/orta bozulmada hata ≈ **9–17 kat** düşüyor. Gemma 3'te yalnızca ≈ 3 kat.
+1. **LoRA her modelde işe yarıyor, ama büyüklüğü farklı.** Qwen ve InternVL'de temiz/hafif/orta bozulmada hata ≈ **9–17 kat**, Llama 3.2'de ≈ **8–14 kat** düşüyor. Gemma 3'te yalnızca ≈ 3 kat.
 2. **Ağır bozulma (D) hâlâ zor.** Kazanç 1,6–3 kata düşüyor ve en iyi modelde bile medyan CER 0,09. Küçük, bulanık, JPEG'li taramalar çözülmüş sayılmaz.
-3. **Sıralama: Qwen3-VL ≈ Qwen2.5-VL > InternVL3.5 > Gemma 3.** Qwen3 ile Qwen2.5 temiz/hafif/orta seviyelerde istatistiksel olarak ayrışmıyor (güven aralıkları örtüşüyor);
-   ağır bozulmada Qwen3 net önde (D: 0,092 [0,072–0,111] vs 0,165 [0,131–0,193]).
+3. **Sıralama (LoRA sonrası, temiz sayfada): Qwen3-VL ≈ Qwen2.5-VL > InternVL3.5 > Llama 3.2 ≫ Gemma 3** (ortak alt küme CER: 0,011 / 0,012 / 0,018 / 0,032 / 0,266).
+   Qwen3 ile Qwen2.5 temiz/hafif/orta seviyelerde ayrışmıyor (güven aralıkları örtüşüyor); ağır bozulmada Qwen3 önde (tam test seti D: 0,092 [0,072–0,111] vs 0,165 [0,131–0,193]).
+   Llama (n=67) güven aralıkları geniş: onu InternVL3.5'in biraz gerisinde, Gemma'nın çok önünde saymak güvenli; daha ince sıralama iddia edilmez.
 4. **Taban modelin hatasının bir kısmı biçim hatası.** İnce ayarsız modeller düz metin yerine markdown tablosu yazabiliyor; InternVL3.5, Gemma 3 ve Llama 3.2 taban halleriyle JSON tablo şemasını
    neredeyse hiç üretemiyor (geçerli JSON %0–5). Bu yüzden onlardaki tablo kazancı büyük ölçüde "formatı öğrenme"dir; Qwen3-VL taban halinde JSON'a uyuyor (%95), onun kazancı (0,45 → 0,72) daha çok gerçek okuma.
 5. **Tablo satır yapısı zayıf.** Hücre değerleri iyi okunsa da çıktıdaki satır sayısının referansla birebir tutması en iyi modelde ≈ %35 (katı ölçüt; etiket gürültüsü de payı olabilir).
@@ -80,9 +81,29 @@ Aşağıda öne çıkanlar. Köşeli parantez: %95 güven aralığı (sayfa düz
 | | B | 0,402 [0,383–0,425] | **0,145** [0,111–0,177] | 2,8× |
 | | C | 0,398 [0,384–0,420] | **0,141** [0,116–0,185] | 2,8× |
 | | D | 0,612 [0,586–0,651] | **0,394** [0,359–0,426] | 1,6× |
-| Llama 3.2 11B Vision\* | A–D | {{LLAMA_CER_ROWS}} | | |
+| Llama 3.2 11B Vision\* | A | 0,449 [0,379–0,557] | **0,032** [0,018–0,052] | 14,0× |
+| | B | 0,417 [0,365–0,602] | **0,033** [0,018–0,052] | 12,6× |
+| | C | 0,520 [0,452–0,743] | **0,068** [0,030–0,104] | 7,6× |
+| | D | 0,885 [0,848–0,917] | **0,352** [0,244–0,456] | 2,5× |
 
-![Seviyeye göre medyan CER](results/final/cer_by_level.png)
+![Seviyeye göre medyan CER (tam test seti, Llama hariç)](results/final/cer_by_level.png)
+
+#### Ortak alt küme: 5 modelin adil karşılaştırması
+
+Llama 3.2 yalnızca her seviyenin ilk 100 örneğinde ölçüldü. Beş modeli **aynı sayfalarda** karşılaştırmak için diğer modelleri de bu alt kümede yeniden hesapladık
+(**yalnızca 67 transkripsiyon + 33 tablo sayfası/seviye**: aralıklar geniştir, küçük farkları yorumlamayın; tam aralıklar `results/FINAL_RESULTS.md`'de). Bu alt küme tam test setinden biraz zor çıktı (tüm medyanlar daha yüksek).
+
+Medyan CER, taban → LoRA:
+
+| Model | A | B | C | D |
+|---|---|---|---|---|
+| Qwen3-VL-8B | 0,156 → **0,011** | 0,158 → **0,009** | 0,164 → **0,015** | 0,375 → **0,118** |
+| Qwen2.5-VL-7B | 0,159 → **0,012** | 0,155 → **0,014** | 0,192 → **0,019** | 0,484 → **0,179** |
+| InternVL3.5-8B | 0,316 → **0,018** | 0,349 → **0,021** | 0,366 → **0,042** | 0,873 → **0,359** |
+| Llama 3.2 11B Vision | 0,449 → **0,032** | 0,417 → **0,033** | 0,520 → **0,068** | 0,885 → **0,352** |
+| Gemma 3 12B | 0,470 → **0,266** | 0,460 → **0,292** | 0,491 → **0,283** | 0,700 → **0,453** |
+
+![Ortak alt küme: medyan CER](results/final/cer_by_level_common.png)
 
 ### 2.2 Sayı doğruluğu (sayı F1, yüksek iyi)
 
@@ -107,9 +128,22 @@ Görev: tablo sayfası → `{"kalem", "dipnot", "degerler"}` satırları. **Hüc
 | Qwen2.5-VL-7B | 0,19 → **0,69** | 0,16 → **0,64** | 0,06 → **0,29** | 0,56 → 0,92 |
 | InternVL3.5-8B | 0,00 → **0,68** | 0,00 → **0,58** | 0,00 → **0,17** | 0,03 → 0,97 |
 | Gemma 3 12B | 0,01 → **0,48** | 0,00 → **0,39** | 0,00 → **0,13** | 0,02 → 0,96 |
-| Llama 3.2 11B Vision\* | {{LLAMA_TABLE_A}} | {{LLAMA_TABLE_C}} | {{LLAMA_TABLE_D}} | {{LLAMA_VALID}} |
+| Llama 3.2 11B Vision\*\* | 0,00 → **0,72** | 0,00 → **0,48** | 0,00 → **0,08** | 0,00 → 0,97 |
 
-![Tablo hücre doğruluğu](results/final/table_cell_exact.png)
+\*\* Llama için yalnızca 33 tablo sayfası/seviye (ortak alt küme).
+
+Ortak alt kümede (33 tablo sayfası/seviye) hücre doğruluğu, taban → LoRA:
+
+| Model | A | B | C | D |
+|---|---|---|---|---|
+| Qwen3-VL-8B | 0,41 → **0,76** | 0,27 → **0,66** | 0,35 → **0,70** | 0,08 → **0,29** |
+| Qwen2.5-VL-7B | 0,24 → **0,75** | 0,11 → **0,74** | 0,22 → **0,58** | 0,04 → **0,22** |
+| Llama 3.2 11B Vision | 0,00 → **0,72** | 0,00 → **0,61** | 0,00 → **0,48** | 0,00 → **0,08** |
+| InternVL3.5-8B | 0,00 → **0,62** | 0,00 → **0,63** | 0,00 → **0,52** | 0,00 → **0,11** |
+| Gemma 3 12B | 0,00 → **0,41** | 0,00 → **0,37** | 0,00 → **0,34** | 0,00 → **0,06** |
+
+![Tablo hücre doğruluğu (tam test seti, Llama hariç)](results/final/table_cell_exact.png)
+![Tablo hücre doğruluğu (ortak alt küme)](results/final/table_cell_exact_common.png)
 
 ### 2.4 Eğitim bilgileri
 
@@ -254,5 +288,5 @@ Ham KAP verisi ve PDF'ler depoda **yoktur**; `kap_collect.py` ile yeniden indiri
 - Bu depodaki **kod**: MIT (bkz. `LICENSE`).
 - **Adaptörler** taban modellerin lisanslarına tabidir: Qwen3-VL / Qwen2.5-VL / InternVL3.5 (Apache-2.0 olarak bildirilmiştir; kullanmadan önce taban model sayfasını doğrulayın),
   **Gemma** (Gemma Kullanım Şartları), **Llama 3.2** ("Built with Llama"; Llama 3.2 Community License — görüntü destekli modeller AB'de yerleşik kişi/şirketlerce kullanılamaz).
-- **Veri:** KAP kamuya açık bildirimlerdir; ancak **yeniden dağıtım koşulları ayrıca doğrulanmalıdır**. Bu yüzden ham veri ve PDF'ler depoda paylaşılmaz.
+- **Veri:** KAP kamuya açık bildirimlerdir; ancak **yeniden dağıtım koşulları ayrıca doğrulanmalıdır**. Bu yüzden ham veri ve PDF'ler depoda paylaşılmaz; `examples/` altında yalnızca tek bir sayfa görüntüsü ve çıktısı örnek olarak, `results/EXAMPLES.md` içinde kısa alıntılar bulunur.
 - Bu bir araştırma/öğrenme projesidir; finansal karar veya otomatik işleme için kullanılmamalıdır.
