@@ -61,7 +61,8 @@ do_model() { # key
     MP=""; [ $MODE = lora ] && MP="--model-path $R/$K/merged"
     OK=0
     for ENG in vllm hf; do
-      $VPY eval_vllm.py --model $K --tag $MODE $MP --engine $ENG $COMMON_EVAL --out $R/eval/$K > $R/eval/${K}_${MODE}_$ENG.log 2>&1 && { OK=1; break; }
+      EPY=$VPY; [ $ENG = hf ] && EPY=python   # HF motoru sistem python'unda (vllm venv'inde accelerate yok)
+      $EPY eval_vllm.py --model $K --tag $MODE $MP --engine $ENG $COMMON_EVAL --out $R/eval/$K > $R/eval/${K}_${MODE}_$ENG.log 2>&1 && { OK=1; break; }
       log "$K eval $MODE $ENG BASARISIZ, siradaki motor"
     done
     [ $OK = 1 ] && log "$K eval $MODE TAMAM" || status "$K eval $MODE BASARISIZ"
