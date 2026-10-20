@@ -43,7 +43,7 @@ def collect(root, ids_filter=None):
     """-> {(model, tag, level): {"cer": [...], "number_f1": [...], "cell_exact": [...], "valid": [...], "row_count_match": [...]}}"""
     out = defaultdict(lambda: defaultdict(list))
     for mdir in sorted(Path(root).iterdir()):
-        if not mdir.is_dir():
+        if not mdir.is_dir() or mdir.name not in FINETUNED:
             continue
         for f in sorted(mdir.glob("preds_*_test_?.jsonl")):
             stem = f.stem[len("preds_"):]
@@ -134,7 +134,7 @@ def main():
           "Tek koşu, seed 42. Tum degerler temizlenmis gorunum (sondaki tekrar blogu kesilir, referansi <150 karakter olan damga-only sayfalar disarida). "
           "Koseli parantez: %95 bootstrap guven araligi (1000 yeniden ornekleme, sayfa duzeyinde).", ""]
     full = collect(args.eval_root)
-    md += build_tables(full, "Tam test seti (ilk 4 model + OCR)")
+    md += build_tables(full, "Tam test seti (4 model; 567 transkripsiyon + 133 tablo sayfasi / seviye)")
 
     # Llama yalnizca her split'in ilk 100 ornegi: ortak alt kume
     ids = set()
