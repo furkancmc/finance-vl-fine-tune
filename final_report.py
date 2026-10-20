@@ -47,7 +47,8 @@ def collect(root, ids_filter=None):
             continue
         for f in sorted(mdir.glob("preds_*_test_?.jsonl")):
             stem = f.stem[len("preds_"):]
-            tag, split = stem.rsplit("_test_", 1)
+            tag, letter = stem.rsplit("_test_", 1)
+            split = f"test_{letter}"
             for r in load_jsonl(f):
                 if ids_filter is not None and (split, r["id"], r.get("task")) not in ids_filter:
                     continue
