@@ -1,27 +1,58 @@
 # KAP Türkçe Belge Okuma: Görüntü-Dil Modellerine LoRA
 
-Türkçe finansal belgelerde (KAP bildirimleri) **sayfa görüntüsünden metin ve tablo okuma** işini 5 açık görüntü-dil (VL) modeliyle
-karşılaştıran ve her birine küçük bir **LoRA** ince ayarı uygulayıp ne kadar kazandırdığını ölçen bir proje. Model yalnızca sayfa **görüntüsünü**
-görür; cevap anahtarı PDF'in kendi metin katmanıdır (elle etiketleme yok). Taranmış/fotoğraflanmış belgeyi taklit etmek için görüntüler
-dört seviyede (A temiz → D ağır) **yapay olarak bozulur**.
+**Türkçe finansal belgelerin (KAP bildirimleri) fotoğrafını/taramasını okuyan yapay zekâ modellerini karşılaştıran ve küçük bir ek eğitimle (LoRA) ne kadar düzeldiklerini ölçen bir proje.**
 
 ![durum](https://img.shields.io/badge/durum-tamamland%C4%B1-brightgreen)
 ![modeller](https://img.shields.io/badge/modeller-5-blue)
 ![dil](https://img.shields.io/badge/dil-T%C3%BCrk%C3%A7e-red)
 
-> **Proje durumu: tamamlandı** (v2, Ekim 2026). Kapsam: 5 model, tek eğitim koşusu, yapay bozulmalı test.
+## Proje ne yapıyor?
+
+Şirketler KAP'a (Kamuyu Aydınlatma Platformu) PDF olarak bildirim yükler. Bu PDF'lerin bir sayfasının **resmini** bir yapay zekâ modeline verip
+"bu sayfada ne yazıyor?" ve "bu tablodaki rakamlar neler?" diye soruyoruz. Sonra modelin cevabını doğru cevapla karşılaştırıp ne kadar hata yaptığını ölçüyoruz.
+
+- **5 model** denedik: Qwen3-VL, Qwen2.5-VL, InternVL3.5, Gemma 3 ve Llama 3.2 Vision.
+- Her modeli iki halde ölçtük: **ilk hali** (hiç ek eğitim yok) ve **LoRA'lı hali** (KAP sayfalarıyla küçük bir ek eğitim almış hali).
+- Doğru cevabı elle yazmadık: PDF'in içindeki gerçek metni kullandık. Model bu metni görmez, yalnızca sayfanın resmini görür.
+- Gerçek taramalar elimizde olmadığı için sayfaları **bilgisayarla bozduk** (4 seviye, aşağıda görsel var).
+
+> **Kısaca:** En iyi model olan Qwen3-VL, temiz sayfalarda yaptığı hatayı yaklaşık **12 kat**, çok bozuk sayfalarda yaklaşık **3 kat** azalttı.
+> Finansal tablolardaki hücrelerin doğru okunma oranı **%45'ten %72'ye** çıktı. Etki 5 modelde de var ama büyüklüğü modele göre çok değişiyor.
 >
-> **Kısaca:** Qwen3-VL-8B + LoRA, temiz sayfalarda medyan karakter hata oranını (CER) **0,107 → 0,009**'a (≈ 12 kat), ağır bozulmada **0,289 → 0,092**'ye (≈ 3 kat)
-> indiriyor; finansal tablo çıkarımında hücre doğruluğunu **0,45 → 0,72**'ye çıkarıyor. Etki 5 modelin hepsinde var ama büyüklüğü modele göre çok değişiyor.
-> **Dikkat:** tek eğitim koşusu, yapay bozulma, gerçek tarama testi yok. Sınırlamalar aşağıda.
+> **Dikkat:** Her model yalnızca bir kez eğitildi ve testte gerçek tarama yok, yapay bozulma var. Ayrıntı için [Sınırlamalar](#7-sınırlamalar).
+
+## Kısa sözlük
+
+| Terim | Anlamı |
+|---|---|
+| **Görüntü-dil modeli (VL)** | Hem resmi hem yazıyı anlayan yapay zekâ modeli. |
+| **LoRA** | Büyük modeli baştan eğitmek yerine, ona küçük bir "ek parça" eğitme yöntemi. Hızlı ve ucuz; ek parça yaklaşık 0,3–0,5 GB. |
+| **Taban model** | Hiç ek eğitim almamış, orijinal model. |
+| **CER (karakter hata oranı)** | Modelin yazdığı metinde kaç karakterin yanlış olduğu. **0 = kusursuz**, düşük iyi. Örneğin 0,01 = yüz karakterde yaklaşık bir hata. Tüm sayfaların ortadaki (medyan) değeri alınır. |
+| **Hücre doğruluğu** | Tablodaki sayıların kaçının birebir doğru okunduğu. Yüksek iyi. |
+| **Geçerli JSON** | Modelin tabloyu istenen düzenli biçimde yazıp yazamadığı. |
+| **Güven aralığı** | Sonucun ne kadar oynayabileceğini gösteren aralık, `[alt–üst]` biçiminde. Aralıklar üst üste biniyorsa iki sonucu birbirinden üstün saymayız. |
+
+## Bozulma seviyeleri: A, B, C, D
+
+Gerçek tarama veya telefon fotoğrafını taklit etmek için aynı sayfa dört seviyede hazırlandı (gerçek bir KAP gelir tablosundan bir kesit):
+
+![Aynı sayfanın A, B, C, D seviyeleri](docs/img/seviyeler.png)
+
+| Seviye | Nasıl bir görüntü? |
+|---|---|
+| **A** | Temiz dijital sayfa, hiç bozulma yok. |
+| **B** | Hafif: çok az bulanıklık ve gürültü. |
+| **C** | Orta: gri tonlama, bulanıklık, hafif eğiklik, gölge, JPEG sıkıştırma. |
+| **D** | Ağır: çözünürlük yarıya iner, yoğun gürültü, çok bulanık; zor okunur. |
 
 ---
 
 ## İçindekiler
 1. [Sonuç özeti](#1-sonuç-özeti)
 2. [Ayrıntılı sonuçlar](#2-ayrıntılı-sonuçlar)
-3. [Gerçek çıktı örnekleri](#3-gerçek-çıktı-örnekleri)
-4. [Ne yaptık, nasıl yaptık](#4-ne-yaptık-nasıl-yaptık)
+3. [Örnek çıktılar](#3-örnek-çıktılar)
+4. [Nasıl yaptık?](#4-nasıl-yaptık)
 5. [Hugging Face adaptörleri](#5-hugging-face-adaptörleri)
 6. [Depo yapısı ve yeniden üretme](#6-depo-yapısı-ve-yeniden-üretme)
 7. [Sınırlamalar](#7-sınırlamalar)
@@ -31,11 +62,10 @@ dört seviyede (A temiz → D ağır) **yapay olarak bozulur**.
 
 ## 1. Sonuç özeti
 
-Aynı test sayfaları, aynı istem ve ayarlar; tek fark LoRA adaptörü. Her hücre **taban model → LoRA**.
-**CER** = karakter hata oranı (düşük iyi, medyan). **Hücre doğruluğu** = tablodaki sayısal hücrelerin birebir doğru oranı (yüksek iyi).
-Test: 80 şirket, **567 transkripsiyon + 133 tablo sayfası, her seviyede aynı sayfalar**. Tüm sayılar tek koşu.
+Aynı test sayfaları, aynı soru ve aynı ayarlar; tek fark LoRA. Her hücrede **taban model → LoRA'lı model** yazıyor.
+Test: 80 şirket, **567 metin + 133 tablo sayfası**; her seviyede aynı sayfalar kullanıldı. Tüm sayılar tek eğitim koşusundan.
 
-| Model | CER, temiz (A) | CER, ağır bozulma (D) | Tablo hücre doğr., temiz (A) | Tablo hücre doğr., ağır (D) |
+| Model | Metin hatası (CER), temiz (A) | Metin hatası (CER), ağır bozuk (D) | Tablo hücre doğruluğu, temiz (A) | Tablo hücre doğruluğu, ağır bozuk (D) |
 |---|---|---|---|---|
 | **Qwen3-VL-8B** | 0,107 → **0,009** | 0,289 → **0,092** | 0,45 → **0,72** | 0,12 → **0,34** |
 | **Qwen2.5-VL-7B** | 0,105 → **0,009** | 0,401 → **0,165** | 0,19 → **0,69** | 0,06 → **0,29** |
@@ -43,27 +73,27 @@ Test: 80 şirket, **567 transkripsiyon + 133 tablo sayfası, her seviyede aynı 
 | **Gemma 3 12B** | 0,421 → **0,147** | 0,612 → **0,394** | 0,01 → **0,48** | 0,00 → **0,13** |
 | **Llama 3.2 11B Vision**\* | 0,449 → **0,032** | 0,885 → **0,352** | 0,00 → **0,72** | 0,00 → **0,08** |
 
-\* Llama 3.2 yalnızca her seviyenin **ilk 100 örneğinde** (≈ 67 transkripsiyon + 33 tablo) ve Hugging Face `generate` ile ölçüldü (vLLM bu modeli desteklemiyor).
-Diğer modellerle adil kıyas için [`results/FINAL_RESULTS.md`](results/FINAL_RESULTS.md) içindeki **ortak alt küme** tablosuna bakın.
+\* Llama 3.2 yalnızca her seviyenin **ilk 100 örneğinde** (≈ 67 metin + 33 tablo sayfası) ve farklı bir yöntemle ölçüldü (vLLM bu modeli desteklemiyor).
+Adil kıyas için [aşağıdaki ortak örnek tablosuna](#ortak-örnekler-5-modelin-adil-karşılaştırması) bakın.
 
 **Sonuçtan çıkanlar**
-1. **LoRA her modelde işe yarıyor, ama büyüklüğü farklı.** Qwen ve InternVL'de temiz/hafif/orta bozulmada hata ≈ **9–17 kat**, Llama 3.2'de ≈ **8–14 kat** düşüyor. Gemma 3'te yalnızca ≈ 3 kat.
-2. **Ağır bozulma (D) hâlâ zor.** Kazanç 1,6–3 kata düşüyor ve en iyi modelde bile medyan CER 0,09. Küçük, bulanık, JPEG'li taramalar çözülmüş sayılmaz.
-3. **Sıralama (LoRA sonrası, temiz sayfada): Qwen3-VL ≈ Qwen2.5-VL > InternVL3.5 > Llama 3.2 ≫ Gemma 3** (ortak alt küme CER: 0,011 / 0,012 / 0,018 / 0,032 / 0,266).
-   Qwen3 ile Qwen2.5 temiz/hafif/orta seviyelerde ayrışmıyor (güven aralıkları örtüşüyor); ağır bozulmada Qwen3 önde (tam test seti D: 0,092 [0,072–0,111] vs 0,165 [0,131–0,193]).
-   Llama (n=67) güven aralıkları geniş: onu InternVL3.5'in biraz gerisinde, Gemma'nın çok önünde saymak güvenli; daha ince sıralama iddia edilmez.
-4. **Taban modelin hatasının bir kısmı biçim hatası.** İnce ayarsız modeller düz metin yerine markdown tablosu yazabiliyor; InternVL3.5, Gemma 3 ve Llama 3.2 taban halleriyle JSON tablo şemasını
-   neredeyse hiç üretemiyor (geçerli JSON %0–5). Bu yüzden onlardaki tablo kazancı büyük ölçüde "formatı öğrenme"dir; Qwen3-VL taban halinde JSON'a uyuyor (%95), onun kazancı (0,45 → 0,72) daha çok gerçek okuma.
-5. **Tablo satır yapısı zayıf.** Hücre değerleri iyi okunsa da çıktıdaki satır sayısının referansla birebir tutması en iyi modelde ≈ %35 (katı ölçüt; etiket gürültüsü de payı olabilir).
+1. **LoRA her modelde işe yarıyor ama farkı modele göre değişiyor.** Qwen ve InternVL'de temiz/hafif/orta sayfalarda hata **9–17 kat**, Llama 3.2'de **8–14 kat** azalıyor. Gemma 3'te yalnızca yaklaşık 3 kat.
+2. **Ağır bozuk sayfalar hâlâ zor.** Kazanç 1,6–3 kata düşüyor; en iyi modelde bile CER 0,09. Küçük, bulanık, sıkıştırılmış taramalar çözülmüş sayılmaz.
+3. **Sıralama (LoRA sonrası, temiz sayfada): Qwen3-VL ≈ Qwen2.5-VL > InternVL3.5 > Llama 3.2 ≫ Gemma 3.**
+   Qwen3 ile Qwen2.5 temiz/hafif/orta seviyelerde birbirinden ayrılmıyor (güven aralıkları örtüşüyor); ağır bozuk sayfada Qwen3 önde (0,092 [0,072–0,111] ve 0,165 [0,131–0,193]).
+   Llama'nın örneği az olduğundan yalnızca "InternVL3.5'in biraz gerisinde, Gemma'nın çok önünde" diyebiliyoruz.
+4. **Taban modelin hatasının bir kısmı "yanlış biçim".** Eğitimsiz modeller düz metin yerine markdown tablosu yazabiliyor; InternVL3.5, Gemma 3 ve Llama 3.2 ilk hallerinde istenen JSON tablo biçimini
+   neredeyse hiç üretemiyor (geçerli JSON %0–5). Bu yüzden onlardaki tablo kazancının büyük kısmı "biçimi öğrenmek". Qwen3-VL ilk halinde bile biçime uyuyor (%95); onun kazancı (0,45 → 0,72) daha çok gerçekten daha iyi okumaktan geliyor.
+5. **Tablo satırlarını saymak zayıf.** Hücreler iyi okunsa da çıktıdaki satır sayısının doğru cevapla birebir tutması en iyi modelde bile ≈ %35 (katı bir ölçüt; doğru cevap etiketlerindeki hatalar da payı olabilir).
 
 ---
 
 ## 2. Ayrıntılı sonuçlar
 
-Tüm tablolar **%95 bootstrap güven aralıklarıyla** [`results/FINAL_RESULTS.md`](results/FINAL_RESULTS.md) içinde (ham veri: [`results/final/final_summary.csv`](results/final/final_summary.csv)).
-Aşağıda öne çıkanlar. Köşeli parantez: %95 güven aralığı (sayfa düzeyinde bootstrap).
+Tüm tablolar güven aralıklarıyla [`results/FINAL_RESULTS.md`](results/FINAL_RESULTS.md) dosyasında, ham veri [`results/final/final_summary.csv`](results/final/final_summary.csv) içinde.
+Aşağıda öne çıkanlar var; köşeli parantez güven aralığıdır.
 
-### 2.1 Transkripsiyon: medyan CER (düşük iyi)
+### 2.1 Metin okuma: CER (düşük iyi)
 
 | Model | Seviye | Taban | + LoRA | Kat |
 |---|---|---|---|---|
@@ -88,14 +118,14 @@ Aşağıda öne çıkanlar. Köşeli parantez: %95 güven aralığı (sayfa düz
 | | C | 0,520 [0,452–0,743] | **0,068** [0,030–0,104] | 7,6× |
 | | D | 0,885 [0,848–0,917] | **0,352** [0,244–0,456] | 2,5× |
 
-![Seviyeye göre medyan CER (tam test seti, Llama hariç)](results/final/cer_by_level.png)
+![Seviyeye göre CER (tam test seti, Llama hariç)](results/final/cer_by_level.png)
 
-#### Ortak alt küme: 5 modelin adil karşılaştırması
+#### Ortak örnekler: 5 modelin adil karşılaştırması
 
-Llama 3.2 yalnızca her seviyenin ilk 100 örneğinde ölçüldü. Beş modeli **aynı sayfalarda** karşılaştırmak için diğer modelleri de bu alt kümede yeniden hesapladık
-(**yalnızca 67 transkripsiyon + 33 tablo sayfası/seviye**: aralıklar geniştir, küçük farkları yorumlamayın; tam aralıklar `results/FINAL_RESULTS.md`'de). Bu alt küme tam test setinden biraz zor çıktı (tüm medyanlar daha yüksek).
+Llama yalnızca ilk 100 örnekte ölçüldü. Beş modeli **aynı sayfalarda** kıyaslamak için diğer modelleri de bu örneklerde yeniden hesapladık
+(seviye başına yalnızca 67 metin + 33 tablo sayfası olduğundan aralıklar geniştir, küçük farkları yorumlamayın). Bu örnekler tam test setinden biraz daha zor çıktı, bu yüzden hatalar biraz yüksek.
 
-Medyan CER, taban → LoRA:
+CER, taban → LoRA:
 
 | Model | A | B | C | D |
 |---|---|---|---|---|
@@ -105,11 +135,11 @@ Medyan CER, taban → LoRA:
 | Llama 3.2 11B Vision | 0,449 → **0,032** | 0,417 → **0,033** | 0,520 → **0,068** | 0,885 → **0,352** |
 | Gemma 3 12B | 0,470 → **0,266** | 0,460 → **0,292** | 0,491 → **0,283** | 0,700 → **0,453** |
 
-![Ortak alt küme: medyan CER](results/final/cer_by_level_common.png)
+![Ortak örnekler: CER](results/final/cer_by_level_common.png)
 
-### 2.2 Sayı doğruluğu (sayı F1, yüksek iyi)
+### 2.2 Sayıların doğruluğu (sayı F1, yüksek iyi)
 
-Tutarlar ve tarihler finansal belgede kritik. Sayı F1, referanstaki ve çıktıdaki sayı dizilerinin eşleşmesini ölçer.
+Tutarlar ve tarihler finansal belgede çok önemli. Sayı F1, modelin yazdığı sayıların doğru cevaptaki sayılarla ne kadar örtüştüğünü ölçer (1 = tam örtüşme).
 
 | Model | A: taban → LoRA | D: taban → LoRA |
 |---|---|---|
@@ -118,11 +148,11 @@ Tutarlar ve tarihler finansal belgede kritik. Sayı F1, referanstaki ve çıktı
 | InternVL3.5-8B | 0,875 → **0,949** | 0,304 → **0,518** |
 | Gemma 3 12B | 0,741 → **0,778** | 0,405 → **0,518** |
 
-Sayılarda kazanç, harflerdekinden küçük (taban modeller sayıları zaten nispeten iyi okuyor), ama temiz sayfada bile LoRA'lı en iyi modelin sayı F1'i 0,96 civarı: yani sayıların yaklaşık **%4'ü hâlâ yanlış/eksik** — mali veri için kritik bir sınır.
+Sayılardaki kazanç harflerdekinden küçük, çünkü taban modeller sayıları zaten nispeten iyi okuyor. Ama temiz sayfada bile en iyi modelin sayı F1'i 0,96: yani sayıların yaklaşık **%4'ü hâlâ yanlış veya eksik**. Mali veri için bu önemli bir sınır.
 
-### 2.3 Tablo çıkarımı (JSON)
+### 2.3 Tablo okuma (JSON)
 
-Görev: tablo sayfası → `{"kalem", "dipnot", "degerler"}` satırları. **Hücre doğruluğu**, **geçerli JSON** oranı (çıktı şemaya uyuyor mu).
+Görev: tablo sayfasını okuyup her satırı `{"kalem", "dipnot", "degerler"}` biçiminde yazmak. **Hücre doğruluğu** sayıların birebir doğru olma oranı, **geçerli JSON** ise çıktının istenen biçime uyma oranıdır.
 
 | Model | Hücre doğruluğu A | C | D | Geçerli JSON A (taban → LoRA) |
 |---|---|---|---|---|
@@ -132,9 +162,9 @@ Görev: tablo sayfası → `{"kalem", "dipnot", "degerler"}` satırları. **Hüc
 | Gemma 3 12B | 0,01 → **0,48** | 0,00 → **0,39** | 0,00 → **0,13** | 0,02 → 0,96 |
 | Llama 3.2 11B Vision\*\* | 0,00 → **0,72** | 0,00 → **0,48** | 0,00 → **0,08** | 0,00 → 0,97 |
 
-\*\* Llama için yalnızca 33 tablo sayfası/seviye (ortak alt küme).
+\*\* Llama için yalnızca 33 tablo sayfası/seviye.
 
-Ortak alt kümede (33 tablo sayfası/seviye) hücre doğruluğu, taban → LoRA:
+Ortak örneklerde (33 tablo sayfası/seviye) hücre doğruluğu, taban → LoRA:
 
 | Model | A | B | C | D |
 |---|---|---|---|---|
@@ -145,7 +175,7 @@ Ortak alt kümede (33 tablo sayfası/seviye) hücre doğruluğu, taban → LoRA:
 | Gemma 3 12B | 0,00 → **0,41** | 0,00 → **0,37** | 0,00 → **0,34** | 0,00 → **0,06** |
 
 ![Tablo hücre doğruluğu (tam test seti, Llama hariç)](results/final/table_cell_exact.png)
-![Tablo hücre doğruluğu (ortak alt küme)](results/final/table_cell_exact_common.png)
+![Tablo hücre doğruluğu (ortak örnekler)](results/final/table_cell_exact_common.png)
 
 ### 2.4 Eğitim bilgileri
 
@@ -157,63 +187,68 @@ Ortak alt kümede (33 tablo sayfası/seviye) hücre doğruluğu, taban → LoRA:
 | Gemma 3 12B | 128 dk | 0,3494 |
 | Llama 3.2 11B Vision | 134 dk | 0,0581 |
 
-(Kayıplar tokenizer farkı yüzünden modeller arasında karşılaştırılamaz. Gemma'nın yüksek kaybı zayıf CER sonucuyla tutarlı; nedeni doğrulanmadı —
-Gemma 3 görüntüyü sabit 896×896'ya getirdiği için yoğun sayfalarda ayrıntı kaybı bir aday açıklamadır.)
+(Kayıp değerleri modellerin yazı birimleri farklı olduğu için birbiriyle karşılaştırılamaz. Gemma'nın yüksek kaybı zayıf sonucuyla tutarlı, ama nedeni doğrulanmadı;
+Gemma 3 resmi sabit 896×896'ya küçülttüğü için yoğun sayfalarda ayrıntı kaybı olası bir açıklamadır.)
 
-### 2.5 Önceki (v1) koşuyla fark
-İlk deneme (Qwen2.5/Qwen3, 1000 örnek) bu veri hattının hatalarını gösterdi ve v2'yi biçimlendirdi: referansta yalnızca SPK doğrulama damgası olan sayfalar CER'i şişiriyordu
-(filtrelendi), test seti küçüktü (tablo n=72 → 133). v1 sonuçları [`results/RESULTS.md`](results/RESULTS.md) içinde duruyor; v2 sayıları onunla birebir kıyaslanamaz.
+### 2.5 İlk denemeden (v1) farkı
+İlk deneme (Qwen2.5/Qwen3, 1000 örnek) veri hazırlama hatalarını gösterdi ve v2'yi şekillendirdi: yalnızca SPK doğrulama damgası olan sayfalar hata oranını şişiriyordu (çıkarıldı),
+test seti küçüktü (tablo sayfası 72 → 133). v1 sonuçları [`results/RESULTS.md`](results/RESULTS.md) içinde duruyor, v2 ile birebir kıyaslanamaz.
 
 ---
 
-## 3. Gerçek çıktı örnekleri
+## 3. Örnek çıktılar
 
-Aşağıdakiler testten **otomatik** seçildi (kural: [`results/EXAMPLES.md`](results/EXAMPLES.md) içinde; elle ayıklanmadı). Tam örnekler (4 metin + 1 tablo, başarısızlık örneği dahil) orada.
+Örnekler testten **otomatik** seçildi, elle ayıklanmadı (kural: [`results/EXAMPLES.md`](results/EXAMPLES.md); tam liste ve başarısızlık örneği orada).
 
-**Örnek: orta bozulmalı (C) bir izahname sayfası, Qwen3-VL-8B**
+**Örnek 1: orta bozuk (C) bir izahname sayfası, Qwen3-VL-8B**
 
 | | Çıktı (alıntı) | CER |
 |---|---|---|
-| Referans | `İzahname` · `İlgili Şirketler [NETCD]` · `… İzahnamesinin 1. bölümü ekte yer almakta olup` · `Saygılarımızla.` | |
-| **Taban** | `KAP` `KARAYI ATIKLAMA PLATFORMU` `PUBLIC DISCLOSURE PLATFORM` · `Izahname` · `İlgili Şirketler (NETCD)` · `… Izahnamesinin …` · `Saygılarımla,` | 0,150 |
-| **LoRA** | `İzahname` · `İlgili Şirketler [NETCD]` · `… İzahnamesinin 1. bölümü ekte yer almakta olup` · `Saygılarımızla.` | **0,000** |
+| Doğru cevap | `İzahname` · `İlgili Şirketler [NETCD]` · `… İzahnamesinin 1. bölümü ekte yer almakta olup` · `Saygılarımızla.` | |
+| **Taban model** | `KAP` `KARAYI ATIKLAMA PLATFORMU` `PUBLIC DISCLOSURE PLATFORM` · `Izahname` · `İlgili Şirketler (NETCD)` · `… Izahnamesinin …` · `Saygılarımla,` | 0,150 |
+| **LoRA'lı model** | `İzahname` · `İlgili Şirketler [NETCD]` · `… İzahnamesinin 1. bölümü ekte yer almakta olup` · `Saygılarımızla.` | **0,000** |
 
-Taban model sayfada olmayan bir üst başlık uydurup (`KARAYI ATIKLAMA PLATFORMU` — gerçek: *Kamuyu Aydınlatma Platformu* logosunu yanlış okumuş) `İ` harfini `I`'ya çevirmiş ve kelimeleri bozmuş; LoRA hepsini referansla birebir okumuş.
+Taban model sayfada olmayan bir üst başlık uydurmuş (`KARAYI ATIKLAMA PLATFORMU`; gerçeği *Kamuyu Aydınlatma Platformu* logosu), `İ` harfini `I` yapmış ve bazı kelimeleri bozmuş. LoRA'lı model hepsini doğru cevapla birebir okumuş.
 
-**Örnek: temiz sayfada biçim farkı.** Aynı modelde yönetim kurulu listesi sayfasında taban CER'i 0,326: modelin metni düz yazı yerine **markdown tablosu** olarak üretmesi (`| Adı Soyadı | Görevi | …`) ve bir kelimeyi bozması
-(`Yönetim Organi` yerine `Organı`) bu CER'in büyük kısmını oluşturuyor. LoRA düz metin biçimini öğrenip 0,007'ye iniyor. Yani taban CER'indeki fark kısmen **biçim uyumudur**, tamamen "daha iyi görme" değildir (bkz. [Sınırlamalar](#7-sınırlamalar)).
+**Örnek 2: temiz sayfada biçim farkı.** Yönetim kurulu listesi sayfasında taban modelin CER'i 0,326. Modelin metni düz yazı yerine **markdown tablosu** (`| Adı Soyadı | Görevi | …`) olarak yazması
+ve bir kelimeyi bozması (`Yönetim Organi` yerine `Organı`) bu hatanın büyük kısmını oluşturuyor. LoRA'lı model düz metin biçimini öğrenip 0,007'ye iniyor.
+Yani taban modeldeki hatanın bir kısmı "daha kötü görme" değil **biçim uyumsuzluğu** (bkz. [Sınırlamalar](#7-sınırlamalar)).
+
+**Örnek 3: gerçek bir sayfa ve çıktısı.** [`examples/`](examples/) klasöründe gelir tablosu sayfasının resmi ([`sayfa10.png`](examples/sayfa10.png)),
+modelin çıkardığı metin ([`gelir_ozet.txt`](examples/gelir_ozet.txt)) ve tablo ([`gelir_tablosu.json`](examples/gelir_tablosu.json)) var.
 
 ---
 
-## 4. Ne yaptık, nasıl yaptık
+## 4. Nasıl yaptık?
 
 Ayrıntılı anlatım: [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md).
 
 ```
-KAP bildirimleri (Oca–Eyl 2026)   500 bildirim, 391 şirket, 3169 sayfa
-        │  kap_collect.py → make_pages.py (130 DPI) → table_extract.py
+KAP bildirimleri (Ocak–Eylül 2026): 500 bildirim, 391 şirket, 3169 sayfa
+        │  kap_collect.py  →  make_pages.py (sayfayı resme çevir)  →  table_extract.py
         ▼
-Sayfa görüntüsü + referans (PDF metin katmanı; tablo satırları heuristikle)
-        │  degrade.py: A temiz / B hafif / C orta / D ağır (yapay tarama bozulması)
+Sayfa resmi + doğru cevap (PDF'in metni; tablo satırları kurallarla çıkarıldı)
+        │  degrade.py: A temiz / B hafif / C orta / D ağır bozulma
         ▼
-make_dataset.py: şirket bazlı bölme 261 / 50 / 80   (sızıntı yok)
-   eğitim 2500 (2000 metin + 500 tablo) · doğrulama 500 · test 700 × 4 seviye (aynı sayfalar)
-        │  train_lora.py (Unsloth, LoRA r=32, 2 epoch)  ×5 model
+make_dataset.py: şirketlere göre ayrım: 261 eğitim / 50 doğrulama / 80 test şirketi
+   (aynı şirket hem eğitimde hem testte yok)
+   eğitim 2500 örnek · doğrulama 500 · test 700 sayfa × 4 seviye
+        │  train_lora.py (LoRA, 2 tur)  ×5 model
         ▼
-eval_vllm.py → metrics.py → final_report.py (bootstrap %95 GA) → make_examples.py
+eval_vllm.py → metrics.py → final_report.py (güven aralıkları, grafikler) → make_examples.py
 ```
 
-- **Veri:** KAP bildirim PDF'leri. Etiket yok, referans = PDF metin katmanı. Damga-only sayfalar (referans < 150 karakter) çıkarıldı.
-- **Bozulma:** gri ton, düşük çözünürlük, döndürme, bulanıklık, gürültü, gölge, JPEG (olasılıkla uygulanan adımlar; parametreler `degrade.py` ve METHODOLOGY).
-- **Eğitim:** 16-bit LoRA (r=32, α=64), yalnızca dil katmanları, görüntü kodlayıcı dondurulmuş; 2500 örnek × 2 epoch; hepsi için aynı ayarlar.
-- **Ölçüm:** CER/WER, Türkçe karakter doğruluğu, sayı F1; tablo için geçerli JSON, hücre doğruluğu, satır sayısı eşleşmesi. Güven aralıkları bootstrap ile.
-- **Kodun kendisi** `prompts/` altındaki belirtimlerden LLM yardımıyla üretildi ve elle doğrulandı (bkz. `prompts/`).
+- **Veri:** KAP bildirim PDF'leri. Elle etiketleme yok; doğru cevap PDF'in kendi metni. İçinde neredeyse hiç metin olmayan sayfalar (yalnızca doğrulama damgası) çıkarıldı.
+- **Bozulma:** gri ton, düşük çözünürlük, eğiklik, bulanıklık, gürültü, gölge, JPEG sıkıştırma. Parametreler `degrade.py` içinde.
+- **Eğitim:** 5 model için de aynı ayarlar (LoRA, 2 tur, 2500 örnek). Modelin yalnızca dil kısmı eğitildi, görüntüyü işleyen kısmı sabit kaldı.
+- **Ölçüm:** metinde CER ve sayı F1; tabloda geçerli JSON, hücre doğruluğu ve satır sayısı. Güven aralıkları, test sayfalarını tekrar tekrar örnekleyerek (bootstrap) hesaplandı.
+- **Kod nasıl yazıldı:** Betikler `prompts/` klasöründeki tariflerden yapay zekâ yardımıyla üretildi ve elle doğrulandı.
 
 ---
 
 ## 5. Hugging Face adaptörleri
 
-LoRA adaptörleri (taban ağırlıklar ayrıca indirilir; her adaptör ≈ 0,3–0,5 GB):
+LoRA'lı ek parçalar Hugging Face'te yayında (taban model ayrıca indirilir; her adaptör ≈ 0,3–0,5 GB):
 
 | Model | Adaptör | Taban model |
 |---|---|---|
@@ -251,17 +286,17 @@ print(processor.batch_decode(out[:, inputs["input_ids"].shape[1]:], skip_special
 
 | Dosya | Görevi |
 |---|---|
-| `kap_collect.py`, `inventory.py` | KAP bildirimlerini seç/indir, envanter |
-| `make_pages.py`, `table_extract.py` | PDF → sayfa görüntüsü, metin ve tablo etiketi |
+| `kap_collect.py`, `inventory.py` | KAP bildirimlerini seç/indir, envanter çıkar |
+| `make_pages.py`, `table_extract.py` | PDF → sayfa resmi, metin ve tablo cevabı |
 | `degrade.py` | A–D bozulma seviyeleri |
-| `make_dataset.py` | Şirket bazlı bölme, filtre, `dataset.zip` |
-| `model_zoo.py`, `train_lora.py`, `merge_lora.py` | 5 modelin kaydı, LoRA eğitimi, birleştirme |
-| `eval_vllm.py`, `metrics.py` | Değerlendirme (vLLM / HF) ve metrikler |
+| `make_dataset.py` | Şirketlere göre ayırma, filtreleme, `dataset.zip` |
+| `model_zoo.py`, `train_lora.py`, `merge_lora.py` | 5 modelin tanımı, LoRA eğitimi, birleştirme |
+| `eval_vllm.py`, `metrics.py` | Değerlendirme ve metrikler |
 | `report.py`, `final_report.py`, `make_examples.py`, `make_model_cards.py` | Raporlar, güven aralıkları, örnekler, model kartları |
-| `colab/setup_all.sh`, `colab/run_all.sh` | Colab A100'de 5 modeli sıralı eğiten/değerlendiren zincir |
-| `ocr_eval.py`, `ocr_eval_vllm.py` | OCR modelleri için deneme kodu (karşılaştırma kapsam dışı, bkz. Sınırlamalar) |
-| `results/` | `FINAL_RESULTS.md`, `EXAMPLES.md`, `final/` (CSV + grafikler), v1: `RESULTS.md` |
-| `docs/METHODOLOGY.md` | Ayrıntılı yöntem |
+| `colab/` | Colab A100'de 5 modeli sırayla eğiten/değerlendiren betikler |
+| `ocr_eval.py`, `ocr_eval_vllm.py` | Hazır OCR modelleri için deneme kodu (karşılaştırma kapsam dışı) |
+| `results/` | `FINAL_RESULTS.md`, `EXAMPLES.md`, `final/` (CSV + grafikler), v1 için `RESULTS.md` |
+| `docs/` | `METHODOLOGY.md` (ayrıntılı yöntem), `img/` (README görselleri) |
 
 ```bash
 python kap_collect.py && python inventory.py && python make_pages.py && python make_dataset.py --zip
@@ -275,20 +310,20 @@ Ham KAP verisi ve PDF'ler depoda **yoktur**; `kap_collect.py` ile yeniden indiri
 
 ## 7. Sınırlamalar
 
-1. **Yapay bozulma, gerçek tarama yok.** "Taranmış belge" sonuçları yapay bozulmadan gelir; gerçek tarama/fotoğraf genellemesi **ölçülmedi**. En önemli açık nokta.
-2. **Etiket gürültüsü.** Referans PDF metin katmanı; okuma sırası ve **tablo satırları heuristikle** çıkarıldı. Tablo "satır sayısı eşleşmesi" düşüklüğünün bir kısmı model değil etiket kaynaklı olabilir. Etiketlerin küçük bir kısmı elle doğrulanmadı.
-3. **Tek koşu, tek tohum.** Güven aralıkları test örneklemesini gösterir, **eğitim rastgeleliğini göstermez.** Birbirine yakın sonuçlar (Qwen3 ↔ Qwen2.5, A–C) arasında sıralama iddia edilmez.
-4. **Şablon metin.** KAP sayfalarında tekrarlayan şablon çoktur; yüksek doğruluğun bir kısmı bu şablonları öğrenmekten gelebilir. Şablonsuz serbest metinde sonuçlar daha kötü olabilir.
-5. **Taban model hatasının bir kısmı biçim hatası** (markdown/JSON şeması). Kazançlar tamamen "daha iyi okuma" değildir; özellikle InternVL3.5, Gemma 3, Llama 3.2 tablo sonuçlarında.
-6. **Llama 3.2 farklı protokol:** yalnızca ilk 100 örnek/seviye, HF motoruyla, en çok 2048 token. Ortak alt küme tablosuyla kıyaslayın.
-7. **Kısa eğitim:** 2 epoch, 2500 örnek. Daha uzun/geniş eğitim sonuçları değiştirebilir. Kaçak (tekrar döngüsü) üretim ağır bozulmada hâlâ görülüyor; `repetition_penalty` denenmedi.
-8. **Hazır OCR modelleriyle kıyas yok.** PaddleOCR-VL, HunyuanOCR ve DeepSeek-OCR ile zero-shot karşılaştırma bu çalışmanın kapsamında değildir; deneme kodu (`ocr_eval_vllm.py`) depoda durur. PaddleOCR-VL için yalnızca kısmi bir ön ölçüm alındı, rapora dahil edilmedi.
-9. **Yalnızca KAP.** Başka belge türleri/ülkeleri test edilmedi.
+1. **Gerçek tarama yok, yapay bozulma var.** "Taranmış belge" sonuçları bilgisayarla bozulmuş sayfalardan geliyor; gerçek tarama ve telefon fotoğraflarındaki başarı **ölçülmedi**. En önemli eksik bu.
+2. **Doğru cevap etiketleri kusursuz değil.** Cevap PDF'in metin katmanı; okuma sırası ve **tablo satırları kurallarla otomatik çıkarıldı**. Tablo satır sayısındaki düşük başarının bir kısmı modelden değil etiketlerden gelebilir. Etiketlerin yalnızca küçük bir kısmı elle doğrulandı.
+3. **Tek eğitim koşusu.** Güven aralıkları test sayfalarının şansını gösterir, **eğitimin şansını göstermez**. Birbirine yakın sonuçlar (Qwen3 ↔ Qwen2.5, A–C seviyeleri) arasında sıralama iddia etmiyoruz.
+4. **Tekrarlayan şablonlar.** KAP sayfalarında hep aynı kalıp metinler çok geçiyor; yüksek doğruluğun bir kısmı bu kalıpları ezberlemekten gelebilir. Kalıpsız serbest metinde sonuçlar daha kötü olabilir.
+5. **Taban modelin hatasının bir kısmı biçim hatası** (markdown/JSON). Kazançlar tamamen "daha iyi okuma" değil; özellikle InternVL3.5, Gemma 3 ve Llama 3.2'nin tablo sonuçlarında.
+6. **Llama 3.2 farklı ölçüldü:** seviye başına yalnızca ilk 100 örnek, farklı çalıştırma yöntemi, en fazla 2048 token. Ortak örnekler tablosuyla kıyaslayın.
+7. **Kısa eğitim:** 2 tur, 2500 örnek. Daha uzun eğitim sonuçları değiştirebilir. Ağır bozuk sayfalarda model bazen aynı satırı tekrar edip duruyor; bunu önlemek için tekrar cezası denenmedi.
+8. **Hazır OCR programlarıyla kıyas yok.** PaddleOCR-VL, HunyuanOCR ve DeepSeek-OCR ile karşılaştırma bu çalışmanın kapsamında değil; deneme kodu (`ocr_eval_vllm.py`) depoda duruyor. PaddleOCR-VL için yalnızca kısmi bir ön ölçüm alındı, rapora girmedi.
+9. **Yalnızca KAP.** Başka belge türleri veya ülkeler test edilmedi.
 
 ## 8. Lisans ve veri notları
 
-- Bu depodaki **kod**: MIT (bkz. `LICENSE`).
-- **Adaptörler** taban modellerin lisanslarına tabidir: Qwen3-VL / Qwen2.5-VL / InternVL3.5 (Apache-2.0 olarak bildirilmiştir; kullanmadan önce taban model sayfasını doğrulayın),
-  **Gemma** (Gemma Kullanım Şartları), **Llama 3.2** ("Built with Llama"; Llama 3.2 Community License — görüntü destekli modeller AB'de yerleşik kişi/şirketlerce kullanılamaz).
-- **Veri:** KAP kamuya açık bildirimlerdir; ancak **yeniden dağıtım koşulları ayrıca doğrulanmalıdır**. Bu yüzden ham veri ve PDF'ler depoda paylaşılmaz; `examples/` altında yalnızca tek bir sayfa görüntüsü ve çıktısı örnek olarak, `results/EXAMPLES.md` içinde kısa alıntılar bulunur.
-- Bu bir araştırma/öğrenme projesidir; finansal karar veya otomatik işleme için kullanılmamalıdır.
+- Bu depodaki **kod**: MIT ([`LICENSE`](LICENSE)).
+- **Adaptörler** taban modellerin lisanslarına tabidir: Qwen3-VL / Qwen2.5-VL / InternVL3.5 (Apache-2.0 olarak bildirilmiş; kullanmadan önce taban model sayfasını kontrol edin),
+  **Gemma** (Gemma Kullanım Şartları), **Llama 3.2** ("Built with Llama"; Llama 3.2 Community License. Görüntü destekli modeller AB'de yerleşik kişi/şirketlerce kullanılamaz).
+- **Veri:** KAP bildirimleri kamuya açıktır, ancak **yeniden dağıtım koşulları ayrıca doğrulanmalıdır**. Bu yüzden ham veri ve PDF'ler depoda paylaşılmaz; yalnızca [`examples/`](examples/) altında tek bir sayfa ve çıktısı, `results/EXAMPLES.md` içinde kısa alıntılar var.
+- Bu bir araştırma/öğrenme projesidir; finansal karar vermek veya otomatik işlem yapmak için kullanılmamalıdır.
